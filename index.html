@@ -136,6 +136,111 @@
     .month-stat-value { font-size: 18px; font-weight: 600; color: #0071e3; }
     .loading { text-align: center; padding: 40px; color: #86868b; }
     .error { background: #ff3b30; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; }
+    
+    /* 年份视图样式 */
+    .year-selector { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .year-tab {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      background: rgba(0,0,0,0.04);
+      color: #86868b;
+    }
+    .year-tab:hover { background: rgba(0,113,227,0.08); }
+    .year-tab.active {
+      background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%);
+      color: white;
+      border-color: #0071e3;
+    }
+    .year-tab.history {
+      background: rgba(255,149,0,0.1);
+      color: #ff9500;
+      border-color: rgba(255,149,0,0.2);
+    }
+    .year-tab.history:hover { background: rgba(255,149,0,0.2); }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1d1d1f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .year-badge {
+      background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 980px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    /* 历史数据折叠 */
+    .history-section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px dashed rgba(0,0,0,0.1);
+    }
+    .history-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: #86868b;
+      font-size: 14px;
+      padding: 12px 16px;
+      background: rgba(255,149,0,0.05);
+      border-radius: 12px;
+      border: 1px dashed rgba(255,149,0,0.2);
+      transition: all 0.2s;
+    }
+    .history-toggle:hover { background: rgba(255,149,0,0.1); }
+    .history-toggle .arrow { transition: transform 0.2s; }
+    .history-toggle.open .arrow { transform: rotate(180deg); }
+    .history-content { display: none; margin-top: 20px; }
+    .history-content.show { display: block; }
+    
+    /* 年份对比卡片 */
+    .year-compare {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .compare-card {
+      background: rgba(0,0,0,0.02);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .compare-year { font-size: 12px; color: #86868b; margin-bottom: 4px; }
+    .compare-value { font-size: 20px; font-weight: 700; }
+    .compare-change { font-size: 12px; margin-top: 4px; }
+    .compare-change.up { color: #34c759; }
+    .compare-change.down { color: #ff3b30; }
+    
+    /* 快捷操作优化 */
+    .quick-actions-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .quick-link {
+      color: #0071e3;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .quick-link:hover { background: rgba(0,113,227,0.05); }
     @media (max-width: 768px) {
       .stats-grid, .income-chart, .monthly-stats { grid-template-columns: repeat(2, 1fr); }
       .topbar { padding: 0 16px; }
@@ -210,27 +315,65 @@
       return { year: now.getFullYear(), month: now.getMonth(), quarter: Math.floor(now.getMonth() / 3) };
     }
 
-    async function calcStats() {
+    async function calcStats(year) {
       var ps = await dbGet('projects');
       var totalContract = 0, totalCost = 0, totalReceived = 0;
       for (var i = 0; i < ps.length; i++) {
-        totalContract += (ps[i].contract || 0);
-        totalCost += (ps[i].cost || 0);
-        totalReceived += (ps[i].received || 0);
+        var p = ps[i];
+        var pYear = getProjectYear(p);
+        if (year === 'all' || pYear === year) {
+          totalContract += (p.contract || 0);
+          totalCost += (p.cost || 0);
+          totalReceived += (p.received || 0);
+        }
       }
       return { totalContract, totalCost, totalReceived, totalProfit: totalContract - totalCost, totalReceivable: totalContract - totalReceived };
     }
-
-    async function getMonthlyProfit() {
+    
+    async function getYearlyStats() {
       var ps = await dbGet('projects');
-      var year = new Date().getFullYear();
+      var years = {};
+      var currentYear = new Date().getFullYear();
+      
+      // 收集所有年份
+      for (var i = 0; i < ps.length; i++) {
+        var y = getProjectYear(ps[i]);
+        if (!years[y]) years[y] = { contract: 0, cost: 0, received: 0, count: 0 };
+        years[y].contract += (ps[i].contract || 0);
+        years[y].cost += (ps[i].cost || 0);
+        years[y].received += (ps[i].received || 0);
+        years[y].count++;
+      }
+      
+      return years;
+    }
+    
+    function getProjectYear(project) {
+      // 优先使用收款日期
+      if (project.received_date) {
+        return new Date(project.received_date).getFullYear();
+      }
+      // 其次使用创建日期
+      if (project.created_at) {
+        return new Date(project.created_at).getFullYear();
+      }
+      return new Date().getFullYear();
+    }
+
+    async function getMonthlyProfit(year) {
+      var ps = await dbGet('projects');
       var monthly = [];
-      for (var m = 0; m < 12; m++) monthly.push({ month: m + 1, profit: 0 });
+      for (var m = 0; m < 12; m++) monthly.push({ month: m + 1, profit: 0, income: 0, cost: 0 });
       for (var i = 0; i < ps.length; i++) {
         var p = ps[i];
-        if (p.contract && p.cost !== undefined && p.received_date) {
+        var pYear = getProjectYear(p);
+        if (pYear === year && p.received_date) {
           var d = new Date(p.received_date);
-          if (d.getFullYear() === year) monthly[d.getMonth()].profit += (p.contract - p.cost);
+          if (d.getFullYear() === year) {
+            monthly[d.getMonth()].profit += ((p.contract || 0) - (p.cost || 0));
+            monthly[d.getMonth()].income += (p.contract || 0);
+            monthly[d.getMonth()].cost += (p.cost || 0);
+          }
         }
       }
       return monthly;
@@ -258,10 +401,15 @@
 
     async function renderOverview() {
       var cs = await dbGet('clients');
-      var stats = await calcStats();
+      var currentYear = new Date().getFullYear();
+      var yearlyStats = await getYearlyStats();
+      var years = Object.keys(yearlyStats).sort((a, b) => b - a);
+      var currentYearStats = yearlyStats[currentYear] || { contract: 0, cost: 0, received: 0, count: 0 };
+      
+      var stats = await calcStats(currentYear);
       var dateInfo = getDateInfo();
       var monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-      var monthly = await getMonthlyProfit();
+      var monthly = await getMonthlyProfit(currentYear);
       var monthStats = '';
       for (var m = 0; m < 12; m++) {
         var opacity = m <= dateInfo.month ? 1 : 0.4;
@@ -269,27 +417,77 @@
         var color = profit >= 0 ? '#34c759' : '#ff3b30';
         monthStats += '<div class="month-stat" style="opacity:' + opacity + '"><div class="month-stat-label">' + monthNames[m] + '</div><div class="month-stat-value" style="color:' + color + '">' + fmt(profit) + '</div></div>';
       }
+      
+      // 生成年份选择器
+      var yearTabs = years.map(function(y) {
+        var isActive = parseInt(y) === currentYear ? 'active' : '';
+        var isHistory = parseInt(y) < currentYear ? 'history' : '';
+        return '<div class="year-tab ' + isActive + ' ' + isHistory + '" onclick="switchYear(' + y + ')">' + y + '</div>';
+      }).join('');
+      
+      // 生成历史数据区域
+      var historyYears = years.filter(function(y) { return parseInt(y) < currentYear; });
+      var historyContent = '';
+      if (historyYears.length > 0) {
+        historyContent = '<div class="history-section">' +
+          '<div class="history-toggle" id="historyToggle" onclick="toggleHistory()">' +
+            '<span class="arrow">▼</span> 查看历史数据 (' + historyYears.length + ' 年)' +
+          '</div>' +
+          '<div class="history-content" id="historyContent">';
+        
+        historyYears.forEach(function(y) {
+          var ys = yearlyStats[y];
+          historyContent += '<div class="card" style="margin-top:16px;">' +
+            '<div class="section-header">' +
+              '<div class="section-title"><span class="year-badge" style="background:rgba(255,149,0,0.2);color:#ff9500;">' + y + '</span> 年度财务</div>' +
+              '<span class="quick-link" onclick="switchYear(' + y + ')">查看详情 →</span>' +
+            '</div>' +
+            '<div class="income-chart">' +
+              '<div class="income-card"><div class="income-label">项目报价</div><div class="income-value" style="font-size:22px;">' + fmt(ys.contract) + '</div><div class="income-sub">' + ys.count + ' 个项目</div></div>' +
+              '<div class="income-card green"><div class="income-label">真实利润</div><div class="income-value" style="font-size:22px;">' + fmt(ys.contract - ys.cost) + '</div><div class="income-sub">报价 - 成本</div></div>' +
+              '<div class="income-card orange"><div class="income-label">已回款</div><div class="income-value" style="font-size:22px;">' + fmt(ys.received) + '</div><div class="income-sub">已收款</div></div>' +
+            '</div>' +
+          '</div>';
+        });
+        
+        historyContent += '</div></div>';
+      }
 
       return '<h1 class="page-title">总览</h1>' +
+        // 年份选择器
+        '<div class="year-selector">' + yearTabs + '</div>' +
+        
+        // 当前年份数据
         '<div class="stats-grid">' +
           '<div class="stat-card"><div class="stat-label">项目报价</div><div class="stat-value blue">' + fmt(stats.totalContract) + '</div></div>' +
           '<div class="stat-card"><div class="stat-label">项目成本</div><div class="stat-value orange">' + fmt(stats.totalCost) + '</div></div>' +
           '<div class="stat-card"><div class="stat-label">真实利润</div><div class="stat-value green">' + fmt(stats.totalProfit) + '</div></div>' +
           '<div class="stat-card"><div class="stat-label">客户数</div><div class="stat-value purple">' + cs.length + '</div></div>' +
         '</div>' +
-        '<div class="card"><div class="card-header"><h2 class="card-title">💰 财务概览</h2></div>' +
+        
+        '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 财务概览</div></div>' +
           '<div class="income-chart">' +
             '<div class="income-card"><div class="income-label">真实利润</div><div class="income-value">' + fmt(stats.totalProfit) + '</div><div class="income-sub">报价 - 成本</div></div>' +
             '<div class="income-card orange"><div class="income-label">已回款</div><div class="income-value">' + fmt(stats.totalReceived) + '</div><div class="income-sub">已收款</div></div>' +
             '<div class="income-card green"><div class="income-label">应收账款</div><div class="income-value">' + fmt(stats.totalReceivable) + '</div><div class="income-sub">报价 - 已收</div></div>' +
           '</div>' +
         '</div>' +
-        '<div class="card"><div class="card-header"><h2 class="card-title">📅 月度利润</h2></div><div class="monthly-stats">' + monthStats + '</div></div>' +
-        '<div class="card"><div class="card-header"><h2 class="card-title">⚡ 快捷操作</h2></div><div class="quick-actions">' +
+        
+        '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度利润</div></div><div class="monthly-stats">' + monthStats + '</div></div>' +
+        
+        // 快捷操作
+        '<div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row">' +
           '<button class="btn" onclick="openProjectModal()">➕ 新建项目</button>' +
           '<button class="btn btn-success" onclick="openClientModal()">👥 新建客户</button>' +
           '<button class="btn btn-secondary" onclick="openTransModal()">💰 收支记录</button>' +
-        '</div></div>';
+          '<span class="quick-link" onclick="showPage(\'projects\')">📋 所有项目 →</span>' +
+        '</div></div>' +
+        
+        // 历史数据（折叠）
+        historyContent +
+        
+        // 切换年份的JS函数
+        '<script>window.switchYear=function(y){var yTabs=document.querySelectorAll(".year-tab");yTabs.forEach(function(t){t.classList.remove("active");if(parseInt(t.textContent)===y)t.classList.add("active");});document.getElementById("page").innerHTML=\'<div class="loading">加载中...</div>\';renderYearData(y);};window.toggleHistory=function(){var t=document.getElementById("historyToggle");var c=document.getElementById("historyContent");t.classList.toggle("open");c.classList.toggle("show");};async function renderYearData(year){var stats=await calcStats(year);var monthly=await getMonthlyProfit(year);var monthNames=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];var currentYear=new Date().getFullYear();var dateInfo=getDateInfo();var monthStats="";for(var m=0;m<12;m++){var opacity=m<=dateInfo.month||year<currentYear?1:0.4;var profit=monthly[m].profit;var color=profit>=0?"#34c759":"#ff3b30";monthStats+=\'<div class="month-stat" style="opacity:\'+opacity+\'"><div class="month-stat-label">\'+monthNames[m]+\'</div><div class="month-stat-value" style="color:\'+color+\'">\'+fmt(profit)+\'</div></div>\';}var html=\'<h1 class="page-title\">\'+year+\' 年度总览</h1><div class="year-selector\"><div class="year-tab" onclick="location.reload()">← 返回今年</div><div class="year-tab active">\'+year+\'</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">项目报价</div><div class="stat-value blue">\'+fmt(stats.totalContract)+\'</div></div><div class="stat-card"><div class="stat-label">项目成本</div><div class="stat-value orange">\'+fmt(stats.totalCost)+\'</div></div><div class="stat-card"><div class="stat-label">真实利润</div><div class="stat-value green">\'+fmt(stats.totalProfit)+\'</div></div></div><div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">\'+year+\'</span> 财务概览</div></div><div class="income-chart"><div class="income-card"><div class="income-label">真实利润</div><div class="income-value">\'+fmt(stats.totalProfit)+\'</div><div class="income-sub">报价 - 成本</div></div><div class="income-card orange"><div class="income-label">已回款</div><div class="income-value">\'+fmt(stats.totalReceived)+\'</div><div class="income-sub">已收款</div></div><div class="income-card green"><div class="income-label">应收账款</div><div class="income-value">\'+fmt(stats.totalReceivable)+\'</div><div class="income-sub">报价 - 已收</div></div></div></div><div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">\'+year+\'</span> 月度利润</div></div><div class="monthly-stats">\'+monthStats+\'</div></div><div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row"><button class="btn" onclick="openProjectModal()">➕ 新建项目</button><button class="btn btn-secondary" onclick="showPage(\'projects\')">📋 所有项目 →</button><button class="btn btn-secondary" onclick="location.reload()">← 返回今年</button></div></div>\';document.getElementById("page").innerHTML=html;}</script>';
     }
 
     async function renderProjects() {
