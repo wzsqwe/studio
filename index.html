@@ -255,8 +255,6 @@
     <nav class="topbar-nav">
       <button class="active" onclick="showPage('overview')">总览</button>
       <button onclick="showPage('projects')">项目</button>
-      <button onclick="showPage('clients')">客户</button>
-      <button onclick="showPage('transactions')">收支</button>
     </nav>
   </header>
 
@@ -400,23 +398,29 @@
     }
 
     async function renderOverview() {
-      var cs = await dbGet('clients');
+      var ps = await dbGet('projects');
       var currentYear = new Date().getFullYear();
       var yearlyStats = await getYearlyStats();
       var years = Object.keys(yearlyStats).sort((a, b) => b - a);
-      var currentYearStats = yearlyStats[currentYear] || { contract: 0, cost: 0, received: 0, count: 0 };
+      
+      // 全局应收账款（所有项目）
+      var allStats = await calcStats('all');
       
       var stats = await calcStats(currentYear);
       var dateInfo = getDateInfo();
       var monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
       var monthly = await getMonthlyProfit(currentYear);
       var monthStats = '';
+      var totalProfit = 0;
+      var profitCount = 0;
       for (var m = 0; m < 12; m++) {
         var opacity = m <= dateInfo.month ? 1 : 0.4;
         var profit = monthly[m].profit;
         var color = profit >= 0 ? '#34c759' : '#ff3b30';
+        if (profit !== 0) { totalProfit += profit; profitCount++; }
         monthStats += '<div class="month-stat" style="opacity:' + opacity + '"><div class="month-stat-label">' + monthNames[m] + '</div><div class="month-stat-value" style="color:' + color + '">' + fmt(profit) + '</div></div>';
       }
+      var avgProfit = profitCount > 0 ? Math.round(totalProfit / profitCount) : 0;
       
       // 生成年份选择器
       var yearTabs = years.map(function(y) {
@@ -454,15 +458,23 @@
       }
 
       return '<h1 class="page-title">总览</h1>' +
+        // 全局应收账款提醒（所有项目）
+        '<div class="card" style="background:linear-gradient(135deg,rgba(255,69,58,0.08),rgba(255,149,0,0.08));border:1px solid rgba(255,69,58,0.2);">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">' +
+            '<div><div style="font-size:13px;color:#86868b;margin-bottom:4px;">📋 所有项目总应收账款</div><div style="font-size:28px;font-weight:700;color:#ff3b30;">' + fmt(allStats.totalReceivable) + '</div></div>' +
+            '<div style="text-align:right;"><div style="font-size:13px;color:#86868b;margin-bottom:4px;">累计报价</div><div style="font-size:18px;font-weight:600;color:#1d1d1f;">' + fmt(allStats.totalContract) + '</div></div>' +
+          '</div>' +
+        '</div>' +
+        
         // 年份选择器
-        '<div class="year-selector">' + yearTabs + '</div>' +
+        '<div class="year-selector" style="margin-top:24px;">' + yearTabs + '</div>' +
         
         // 当前年份数据
         '<div class="stats-grid">' +
           '<div class="stat-card"><div class="stat-label">项目报价</div><div class="stat-value blue">' + fmt(stats.totalContract) + '</div></div>' +
           '<div class="stat-card"><div class="stat-label">项目成本</div><div class="stat-value orange">' + fmt(stats.totalCost) + '</div></div>' +
           '<div class="stat-card"><div class="stat-label">真实利润</div><div class="stat-value green">' + fmt(stats.totalProfit) + '</div></div>' +
-          '<div class="stat-card"><div class="stat-label">客户数</div><div class="stat-value purple">' + cs.length + '</div></div>' +
+          '<div class="stat-card"><div class="stat-label">项目数</div><div class="stat-value purple">' + (yearlyStats[currentYear] ? yearlyStats[currentYear].count : 0) + '</div></div>' +
         '</div>' +
         
         '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 财务概览</div></div>' +
@@ -473,13 +485,11 @@
           '</div>' +
         '</div>' +
         
-        '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度利润</div></div><div class="monthly-stats">' + monthStats + '</div></div>' +
+        '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度利润</div><div class="section-sub"><span style="font-size:13px;color:#86868b;">月均利润</span> <span style="font-size:16px;font-weight:600;color:#34c759;">' + fmt(avgProfit) + '</span></div></div><div class="monthly-stats">' + monthStats + '</div></div>' +
         
         // 快捷操作
         '<div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row">' +
           '<button class="btn" onclick="openProjectModal()">➕ 新建项目</button>' +
-          '<button class="btn btn-success" onclick="openClientModal()">👥 新建客户</button>' +
-          '<button class="btn btn-secondary" onclick="openTransModal()">💰 收支记录</button>' +
           '<span class="quick-link" onclick="showPage(\'projects\')">📋 所有项目 →</span>' +
         '</div></div>' +
         // 历史数据（折叠）
@@ -497,11 +507,13 @@
           var profit = (p.contract || 0) - (p.cost || 0);
           var receivable = (p.contract || 0) - (p.received || 0);
           var profitClass = profit >= 0 ? 'text-success' : 'text-danger';
-          var statusTag = p.status === '已全额回款' || p.status === '已完结' ? '<span class="tag tag-success">' + p.status + '</span>' :
+          var isSettled = p.status === '已全额回款' || p.status === '已完结' || receivable <= 0;
+          var statusTag = isSettled ? '<span class="tag tag-success">' + (p.status || '已全额回款') + '</span>' :
+            receivable > 0 && receivable < (p.contract || 0) ? '<span class="tag tag-warning">部分回款</span>' :
             p.status === '逾期未回款' ? '<span class="tag tag-danger">' + p.status + '</span>' :
-            p.status === '待确认' || p.status === '待回款' ? '<span class="tag tag-warning">' + p.status + '</span>' :
             '<span class="tag tag-primary">' + (p.status || '待确认') + '</span>';
-          rows += '<tr><td><strong>' + p.name + '</strong></td><td class="text-muted">' + (p.client || '-') + '</td><td>' + fmt(p.contract) + '</td><td>' + fmt(p.cost || 0) + '</td><td class="text-success">' + fmt(p.received) + '</td><td class="' + profitClass + '">' + fmt(profit) + '</td><td>' + fmt(receivable) + '</td><td>' + statusTag + '</td><td><button class="btn btn-secondary btn-sm" onclick="openProjectModal(\'' + p.id + '\')">编辑</button> <button class="btn btn-danger btn-sm" onclick="delProject(\'' + p.id + '\')">删除</button></td></tr>';
+          var settleBtn = receivable > 0 ? '<button class="btn btn-success btn-sm" style="margin-left:4px;" onclick="settleProject(\'' + p.id + '\')">清账</button>' : '';
+          rows += '<tr><td><strong>' + p.name + '</strong></td><td class="text-muted">' + (p.client || '-') + '</td><td>' + fmt(p.contract) + '</td><td>' + fmt(p.cost || 0) + '</td><td class="text-success">' + fmt(p.received) + '</td><td class="' + profitClass + '">' + fmt(profit) + '</td><td>' + fmt(receivable) + '</td><td>' + statusTag + '</td><td><button class="btn btn-secondary btn-sm" onclick="openProjectModal(\'' + p.id + '\')">编辑</button>' + settleBtn + ' <button class="btn btn-danger btn-sm" onclick="delProject(\'' + p.id + '\')">删</button></td></tr>';
         }
       }
       return '<h1 class="page-title">项目</h1><button class="btn" onclick="openProjectModal()">➕ 新建项目</button><div class="card" style="margin-top:20px;"><div class="table-wrap"><table><thead><tr><th>项目名称</th><th>客户</th><th>报价</th><th>成本</th><th>已收</th><th>利润</th><th>应收</th><th>状态</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
@@ -553,15 +565,12 @@
         var ps = await dbGet('projects');
         for (var i = 0; i < ps.length; i++) { if (ps[i].id === editId) { p = ps[i]; break; } }
       }
-      var cs = await dbGet('clients');
-      var opts = '<option value="">选择客户</option>';
-      for (var j = 0; j < cs.length; j++) opts += '<option value="' + cs[j].name + '"' + (p.client === cs[j].name ? ' selected' : '') + '>' + cs[j].name + '</option>';
       var statusOpts = ['待确认', '待执行', '拍摄中', '交付中', '已完结', '已全额回款', '逾期未回款', '待回款'];
       var statusHtml = '';
       for (var k = 0; k < statusOpts.length; k++) statusHtml += '<option' + (p.status === statusOpts[k] ? ' selected' : '') + '>' + statusOpts[k] + '</option>';
       openModal(editId ? '编辑项目' : '新建项目',
         '<div class="form-group"><label class="form-label">项目名称</label><input class="form-input" id="pName" value="' + (p.name || '') + '" placeholder="输入项目名称"></div>' +
-        '<div class="form-group"><label class="form-label">客户</label><select class="form-select" id="pClient">' + opts + '</select></div>' +
+        '<div class="form-group"><label class="form-label">客户名称</label><input class="form-input" id="pClient" value="' + (p.client || '') + '" placeholder="输入客户名称"></div>' +
         '<div class="form-group"><label class="form-label">项目报价</label><input class="form-input" id="pContract" type="number" value="' + (p.contract || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">项目成本</label><input class="form-input" id="pCost" type="number" value="' + (p.cost || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">已收款</label><input class="form-input" id="pReceived" type="number" value="' + (p.received || '') + '" placeholder="0"></div>' +
@@ -592,6 +601,20 @@
         await dbDelete('projects', id); 
         showPage('projects'); 
       } 
+    }
+    
+    // 清账：将报价全部设为已收款
+    async function settleProject(id) {
+      var ps = await dbGet('projects');
+      var p = ps.find(function(x) { return x.id === id; });
+      if (p && confirm('确定清账？\\n项目：' + p.name + '\\n报价：' + fmt(p.contract) + '\\n将全部标记为已收款')) {
+        await dbUpdate('projects', id, {
+          received: p.contract,
+          received_date: new Date().toISOString().split('T')[0],
+          status: '已全额回款'
+        });
+        showPage('projects');
+      }
     }
 
     // 客户操作
