@@ -239,13 +239,20 @@
     // 页面渲染
     async function showPage(name) {
       document.querySelectorAll('.topbar-nav button').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+      if (event && event.target) event.target.classList.add('active');
       
-      var content = '';
-      if (name === 'overview') content = await renderOverview();
-      else if (name === 'projects') content = await renderProjects();
-      else if (name === 'clients') content = await renderClients();
-      else if (name === 'transactions') content = await renderTransactions();
+      var content = '<div class="loading">加载中...</div>';
+      document.getElementById('page').innerHTML = content;
+      
+      try {
+        if (name === 'overview') content = await renderOverview();
+        else if (name === 'projects') content = await renderProjects();
+        else if (name === 'clients') content = await renderClients();
+        else if (name === 'transactions') content = await renderTransactions();
+      } catch (e) {
+        console.error(e);
+        content = '<div class="error">加载失败，请刷新重试</div>';
+      }
       document.getElementById('page').innerHTML = content;
     }
 
