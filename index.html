@@ -486,9 +486,6 @@
         // 历史数据（折叠）
         historyContent +
         
-        // 切换年份的JS函数
-        '<script>window.switchYear=function(y){var yTabs=document.querySelectorAll(".year-tab");yTabs.forEach(function(t){t.classList.remove("active");if(parseInt(t.textContent)===y)t.classList.add("active");});document.getElementById("page").innerHTML=\'<div class="loading">加载中...</div>\';renderYearData(y);};window.toggleHistory=function(){var t=document.getElementById("historyToggle");var c=document.getElementById("historyContent");t.classList.toggle("open");c.classList.toggle("show");};async function renderYearData(year){var stats=await calcStats(year);var monthly=await getMonthlyProfit(year);var monthNames=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];var currentYear=new Date().getFullYear();var dateInfo=getDateInfo();var monthStats="";for(var m=0;m<12;m++){var opacity=m<=dateInfo.month||year<currentYear?1:0.4;var profit=monthly[m].profit;var color=profit>=0?"#34c759":"#ff3b30";monthStats+=\'<div class="month-stat" style="opacity:\'+opacity+\'"><div class="month-stat-label">\'+monthNames[m]+\'</div><div class="month-stat-value" style="color:\'+color+\'">\'+fmt(profit)+\'</div></div>\';}var html=\'<h1 class="page-title\">\'+year+\' 年度总览</h1><div class="year-selector\"><div class="year-tab" onclick="location.reload()">← 返回今年</div><div class="year-tab active">\'+year+\'</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-label">项目报价</div><div class="stat-value blue">\'+fmt(stats.totalContract)+\'</div></div><div class="stat-card"><div class="stat-label">项目成本</div><div class="stat-value orange">\'+fmt(stats.totalCost)+\'</div></div><div class="stat-card"><div class="stat-label">真实利润</div><div class="stat-value green">\'+fmt(stats.totalProfit)+\'</div></div></div><div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">\'+year+\'</span> 财务概览</div></div><div class="income-chart"><div class="income-card"><div class="income-label">真实利润</div><div class="income-value">\'+fmt(stats.totalProfit)+\'</div><div class="income-sub">报价 - 成本</div></div><div class="income-card orange"><div class="income-label">已回款</div><div class="income-value">\'+fmt(stats.totalReceived)+\'</div><div class="income-sub">已收款</div></div><div class="income-card green"><div class="income-label">应收账款</div><div class="income-value">\'+fmt(stats.totalReceivable)+\'</div><div class="income-sub">报价 - 已收</div></div></div></div><div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">\'+year+\'</span> 月度利润</div></div><div class="monthly-stats">\'+monthStats+\'</div></div><div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row"><button class="btn" onclick="openProjectModal()">➕ 新建项目</button><button class="btn btn-secondary" onclick="showPage(\'projects\')">📋 所有项目 →</button><button class="btn btn-secondary" onclick="location.reload()">← 返回今年</button></div></div>\';document.getElementById("page").innerHTML=html;}</script>';
-    }
 
     async function renderProjects() {
       var ps = await dbGet('projects');
@@ -685,6 +682,79 @@
 
     // 页面加载完成后初始化
     window.onload = init;
+    
+    // ============ 年份切换功能 ============
+    
+    // 切换到指定年份
+    window.switchYear = function(y) {
+      var yTabs = document.querySelectorAll('.year-tab');
+      yTabs.forEach(function(t) {
+        t.classList.remove('active');
+        if (parseInt(t.textContent) === y) t.classList.add('active');
+      });
+      document.getElementById('page').innerHTML = '<div class="loading">加载中...</div>';
+      renderYearData(y);
+    };
+    
+    // 切换历史数据折叠
+    window.toggleHistory = function() {
+      var t = document.getElementById('historyToggle');
+      var c = document.getElementById('historyContent');
+      if (t && c) {
+        t.classList.toggle('open');
+        c.classList.toggle('show');
+      }
+    };
+    
+    // 渲染指定年份的数据
+    async function renderYearData(year) {
+      var stats = await calcStats(year);
+      var monthly = await getMonthlyProfit(year);
+      var monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+      var currentYear = new Date().getFullYear();
+      var dateInfo = getDateInfo();
+      var monthStats = '';
+      
+      for (var m = 0; m < 12; m++) {
+        var opacity = m <= dateInfo.month || year < currentYear ? 1 : 0.4;
+        var profit = monthly[m].profit;
+        var color = profit >= 0 ? '#34c759' : '#ff3b30';
+        monthStats += '<div class="month-stat" style="opacity:' + opacity + '"><div class="month-stat-label">' + monthNames[m] + '</div><div class="month-stat-value" style="color:' + color + '">' + fmt(profit) + '</div></div>';
+      }
+      
+      var html = '<h1 class="page-title">' + year + ' 年度总览</h1>' +
+        '<div class="year-selector">' +
+          '<div class="year-tab" onclick="location.reload()">← 返回今年</div>' +
+          '<div class="year-tab active">' + year + '</div>' +
+        '</div>' +
+        '<div class="stats-grid">' +
+          '<div class="stat-card"><div class="stat-label">项目报价</div><div class="stat-value blue">' + fmt(stats.totalContract) + '</div></div>' +
+          '<div class="stat-card"><div class="stat-label">项目成本</div><div class="stat-value orange">' + fmt(stats.totalCost) + '</div></div>' +
+          '<div class="stat-card"><div class="stat-label">真实利润</div><div class="stat-value green">' + fmt(stats.totalProfit) + '</div></div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="section-header"><div class="section-title"><span class="year-badge">' + year + '</span> 财务概览</div></div>' +
+          '<div class="income-chart">' +
+            '<div class="income-card"><div class="income-label">真实利润</div><div class="income-value">' + fmt(stats.totalProfit) + '</div><div class="income-sub">报价 - 成本</div></div>' +
+            '<div class="income-card orange"><div class="income-label">已回款</div><div class="income-value">' + fmt(stats.totalReceived) + '</div><div class="income-sub">已收款</div></div>' +
+            '<div class="income-card green"><div class="income-label">应收账款</div><div class="income-value">' + fmt(stats.totalReceivable) + '</div><div class="income-sub">报价 - 已收</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="section-header"><div class="section-title"><span class="year-badge">' + year + '</span> 月度利润</div></div>' +
+          '<div class="monthly-stats">' + monthStats + '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="section-header"><div class="section-title">⚡ 快捷操作</div></div>' +
+          '<div class="quick-actions-row">' +
+            '<button class="btn" onclick="openProjectModal()">➕ 新建项目</button>' +
+            '<button class="btn btn-secondary" onclick="showPage(\'projects\')">📋 所有项目 →</button>' +
+            '<button class="btn btn-secondary" onclick="location.reload()">← 返回今年</button>' +
+          '</div>' +
+        '</div>';
+      
+      document.getElementById('page').innerHTML = html;
+    }
   </script>
 </body>
 </html>
