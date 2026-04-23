@@ -416,15 +416,21 @@
       var monthly = await getMonthlyProfit(currentYear);
       var monthStats = '';
       var totalProfit = 0;
+      var totalPassiveForAvg = 0;
+      var monthsCounted = dateInfo.month + 1; // 1月至当前月共几个月
       for (var m = 0; m < 12; m++) {
-        var opacity = m <= dateInfo.month ? 1 : 0.4;
+        var isCurrentOrPast = m <= dateInfo.month;
+        var opacity = isCurrentOrPast ? 1 : 0.4;
         var profit = monthly[m].profit + monthlyPassive; // 项目利润 + 被动收入
         var color = profit >= 0 ? '#34c759' : '#ff3b30';
-        totalProfit += profit;
+        // 只有当前月及之前的月份才计入统计
+        if (isCurrentOrPast) {
+          totalProfit += monthly[m].profit;
+          totalPassiveForAvg += monthlyPassive;
+        }
         monthStats += '<div class="month-stat" style="opacity:' + opacity + '"><div class="month-stat-label">' + monthNames[m] + '</div><div class="month-stat-value" style="color:' + color + '">' + fmt(profit) + '</div></div>';
       }
-      var avgProfit = Math.round(totalProfit / 12); // 月均（含被动收入）
-      var projectAvgProfit = Math.round(stats.totalProfit / 12);
+      var avgProfit = Math.round((totalProfit + totalPassiveForAvg) / monthsCounted); // 月均（含被动收入）
       
       // 生成年份选择器
       var yearTabs = years.map(function(y) {
@@ -473,14 +479,6 @@
         // 年份选择器
         '<div class="year-selector" style="margin-top:24px;">' + yearTabs + '</div>' +
         
-        // 被动收入说明
-        '<div class="card" style="background:linear-gradient(135deg,rgba(0,113,227,0.06),rgba(88,86,214,0.06));border:1px solid rgba(0,113,227,0.15);padding:16px;">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;">' +
-            '<div><div style="font-size:13px;color:#86868b;margin-bottom:4px;">💼 被动收入基准</div><div style="font-size:18px;font-weight:600;">月均 <span style="color:#0071e3;">' + fmt(monthlyPassive) + '</span> · 年均 <span style="color:#0071e3;">' + fmt(yearlyPassive) + '</span></div></div>' +
-            '<div style="text-align:right;"><div style="font-size:13px;color:#86868b;margin-bottom:4px;">含被动年总收</div><div style="font-size:22px;font-weight:700;color:#34c759;">' + fmt(stats.totalProfit + yearlyPassive) + '</div></div>' +
-          '</div>' +
-        '</div>' +
-        
         // 当前年份数据
         '<div class="stats-grid">' +
           '<div class="stat-card"><div class="stat-label">项目报价</div><div class="stat-value blue">' + fmt(stats.totalContract) + '</div></div>' +
@@ -497,7 +495,7 @@
           '</div>' +
         '</div>' +
         
-        '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度总收入</div><div style="display:flex;gap:16px;font-size:13px;"><span style="color:#86868b;">项目均 <span style="color:#34c759;">' + fmt(projectAvgProfit) + '</span></span><span style="color:#86868b;">含被动均 <span style="color:#0071e3;">' + fmt(avgProfit) + '</span></span></div></div><div style="font-size:12px;color:#86868b;margin-bottom:12px;">* 每月自动叠加被动收入 ' + fmt(monthlyPassive) + '</div><div class="monthly-stats">' + monthStats + '</div></div>' +
+        '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度总收入</div><div style="font-size:13px;color:#86868b;">月均收入 <span style="color:#34c759;font-weight:600;">' + fmt(avgProfit) + '</span></div></div><div style="font-size:12px;color:#86868b;margin-bottom:12px;">* 每月自动叠加被动收入 ' + fmt(monthlyPassive) + '</div><div class="monthly-stats">' + monthStats + '</div></div>' +
         
         // 快捷操作
         '<div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row">' +
