@@ -508,6 +508,12 @@
 
     async function renderProjects() {
       var ps = await dbGet('projects');
+      // 按收款日期降序排列（最新的在前）
+      ps.sort(function(a, b) {
+        var dateA = a.received_date ? new Date(a.received_date) : new Date(0);
+        var dateB = b.received_date ? new Date(b.received_date) : new Date(0);
+        return dateB - dateA;
+      });
       var rows = '';
       if (ps.length === 0) {
         rows = '<tr><td colspan="9"><div class="empty"><div class="empty-icon">📁</div><div class="empty-text">暂无项目</div></div></td></tr>';
