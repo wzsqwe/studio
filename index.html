@@ -463,6 +463,33 @@
       }
       var monthlyProjectsCard = monthlyProjectsHtml ? '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度项目</div></div><div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;">' + monthlyProjectsHtml + '</div></div>' : '';
       
+      // 催款板块：欠款项目按欠款时长排序
+      var overdueProjects = ps.filter(function(p) {
+        var receivable = (p.contract || 0) - (p.received || 0);
+        return receivable > 0;
+      }).sort(function(a, b) {
+        // 按收款日期排序，没有日期的排最后
+        var dateA = a.received_date ? new Date(a.received_date) : new Date(9999999999999);
+        var dateB = b.received_date ? new Date(b.received_date) : new Date(9999999999999);
+        return dateA - dateB; // 越早的越前面
+      });
+      var overdueHtml = '';
+      if (overdueProjects.length > 0) {
+        var overdueCards = overdueProjects.map(function(p) {
+          var receivable = (p.contract || 0) - (p.received || 0);
+          var days = p.received_date ? Math.floor((new Date() - new Date(p.received_date)) / (1000 * 60 * 60 * 24)) : null;
+          var daysText = days !== null ? '已逾期 <span style="color:#ff3b30;font-weight:600;">' + days + ' 天</span>' : '收款日未填';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff5f5;border-radius:12px;margin-bottom:8px;border:1px solid rgba(255,59,48,0.1);">' +
+            '<div><div style="font-weight:500;margin-bottom:4px;">' + p.name + '</div><div style="font-size:12px;color:#86868b;">' + daysText + '</div></div>' +
+            '<div style="text-align:right;"><div style="font-size:18px;font-weight:700;color:#ff3b30;">' + fmt(receivable) + '</div></div>' +
+          '</div>';
+        }).join('');
+        overdueHtml = '<div class="card" style="background:linear-gradient(135deg,rgba(255,59,48,0.04),rgba(255,149,0,0.04));border:1px solid rgba(255,59,48,0.15);">' +
+          '<div class="section-header"><div class="section-title"><span style="font-size:20px;">📌</span> 催款提醒</div><span class="tag tag-danger">' + overdueProjects.length + ' 个待催</span></div>' +
+          overdueCards +
+        '</div>';
+      }
+      
       if (historyYears.length > 0) {
         historyContent = '<div class="history-section">' +
           '<div class="history-toggle" id="historyToggle" onclick="toggleHistory()">' +
@@ -519,6 +546,8 @@
         '<div class="card"><div class="section-header"><div class="section-title"><span class="year-badge">' + currentYear + '</span> 月度总收入</div><div style="font-size:13px;color:#86868b;">月均收入 <span style="color:#34c759;font-weight:600;">' + fmt(avgProfit) + '</span></div></div><div style="font-size:12px;color:#86868b;margin-bottom:12px;">* 每月自动叠加被动收入 ' + fmt(monthlyPassive) + '</div><div class="monthly-stats">' + monthStats + '</div></div>' +
         
         monthlyProjectsCard +
+        
+        overdueHtml +
         
         // 快捷操作
         '<div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row">' +
