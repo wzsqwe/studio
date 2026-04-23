@@ -533,7 +533,7 @@
           rows += '<tr><td><strong>' + p.name + '</strong></td><td class="text-muted">' + (p.client || '-') + '</td><td>' + fmt(p.contract) + '</td><td>' + fmt(p.cost || 0) + '</td><td class="text-success">' + fmt(p.received) + '</td><td class="' + profitClass + '">' + fmt(profit) + '</td><td>' + fmt(receivable) + '</td><td>' + statusTag + '</td><td><div class="btn-group"><button class="btn btn-secondary" onclick="openProjectModal(\'' + p.id + '\')">编辑</button>' + settleBtn + '<button class="btn btn-danger" onclick="delProject(\'' + p.id + '\')" style="padding:6px 8px;">删</button></div></td></tr>';
         }
       }
-      return '<h1 class="page-title">项目</h1><button class="btn" onclick="openProjectModal()">➕ 新建项目</button><div class="card" style="margin-top:20px;"><div class="table-wrap"><table><thead><tr><th>项目名称</th><th>客户</th><th>报价</th><th>成本</th><th>已收</th><th>利润</th><th>应收</th><th>状态</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+      return '<h1 class="page-title">项目</h1><button class="btn" onclick="openProjectModal()">➕ 新建项目</button><div class="card" style="margin-top:20px;"><div class="table-wrap"><table><thead><tr><th>项目名称</th><th>备注</th><th>报价</th><th>成本</th><th>已收</th><th>利润</th><th>应收</th><th>状态</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
     }
 
     async function renderClients() {
@@ -587,7 +587,7 @@
       for (var k = 0; k < statusOpts.length; k++) statusHtml += '<option' + (p.status === statusOpts[k] ? ' selected' : '') + '>' + statusOpts[k] + '</option>';
       openModal(editId ? '编辑项目' : '新建项目',
         '<div class="form-group"><label class="form-label">项目名称</label><input class="form-input" id="pName" value="' + (p.name || '') + '" placeholder="输入项目名称"></div>' +
-        '<div class="form-group"><label class="form-label">客户名称</label><input class="form-input" id="pClient" value="' + (p.client || '') + '" placeholder="输入客户名称"></div>' +
+        '<div class="form-group"><label class="form-label">备注</label><input class="form-input" id="pClient" value="' + (p.client || '') + '" placeholder="输入备注"></div>' +
         '<div class="form-group"><label class="form-label">项目报价</label><input class="form-input" id="pContract" type="number" value="' + (p.contract || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">项目成本</label><input class="form-input" id="pCost" type="number" value="' + (p.cost || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">已收款</label><input class="form-input" id="pReceived" type="number" value="' + (p.received || '') + '" placeholder="0"></div>' +
