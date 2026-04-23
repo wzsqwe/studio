@@ -482,10 +482,9 @@
           '<button class="btn btn-secondary" onclick="openTransModal()">💰 收支记录</button>' +
           '<span class="quick-link" onclick="showPage(\'projects\')">📋 所有项目 →</span>' +
         '</div></div>' +
-        
         // 历史数据（折叠）
-        historyContent +
-        
+        historyContent;
+    }
 
     async function renderProjects() {
       var ps = await dbGet('projects');
