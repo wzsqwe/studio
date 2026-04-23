@@ -70,10 +70,10 @@
     .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .card-title { font-size: 20px; font-weight: 600; color: #1d1d1f; }
     .btn {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 4px;
       background: #0071e3; color: white; border: none;
-      padding: 10px 20px; border-radius: 980px;
-      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+      padding: 6px 12px; border-radius: 980px;
+      font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;
     }
     .btn:hover { background: #0077ed; transform: scale(1.02); }
     .btn:active { transform: scale(0.98); }
@@ -82,6 +82,7 @@
     .btn-danger { background: #ff3b30; }
     .btn-success { background: #34c759; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-group { display: inline-flex; gap: 4px; align-items: center; }
     .quick-actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
@@ -528,8 +529,8 @@
             receivable > 0 && receivable < (p.contract || 0) ? '<span class="tag tag-warning">部分回款</span>' :
             p.status === '逾期未回款' ? '<span class="tag tag-danger">' + p.status + '</span>' :
             '<span class="tag tag-primary">' + (p.status || '待确认') + '</span>';
-          var settleBtn = receivable > 0 ? '<button class="btn btn-success btn-sm" style="margin-left:4px;" onclick="settleProject(\'' + p.id + '\')">清账</button>' : '';
-          rows += '<tr><td><strong>' + p.name + '</strong></td><td class="text-muted">' + (p.client || '-') + '</td><td>' + fmt(p.contract) + '</td><td>' + fmt(p.cost || 0) + '</td><td class="text-success">' + fmt(p.received) + '</td><td class="' + profitClass + '">' + fmt(profit) + '</td><td>' + fmt(receivable) + '</td><td>' + statusTag + '</td><td><button class="btn btn-secondary btn-sm" onclick="openProjectModal(\'' + p.id + '\')">编辑</button>' + settleBtn + ' <button class="btn btn-danger btn-sm" onclick="delProject(\'' + p.id + '\')">删</button></td></tr>';
+          var settleBtn = receivable > 0 ? '<button class="btn btn-success btn-sm" style="padding:4px 8px;font-size:11px;" onclick="settleProject(\'' + p.id + '\')">清账</button>' : '';
+          rows += '<tr><td><strong>' + p.name + '</strong></td><td class="text-muted">' + (p.client || '-') + '</td><td>' + fmt(p.contract) + '</td><td>' + fmt(p.cost || 0) + '</td><td class="text-success">' + fmt(p.received) + '</td><td class="' + profitClass + '">' + fmt(profit) + '</td><td>' + fmt(receivable) + '</td><td>' + statusTag + '</td><td><div class="btn-group"><button class="btn btn-secondary" onclick="openProjectModal(\'' + p.id + '\')">编辑</button>' + settleBtn + '<button class="btn btn-danger" onclick="delProject(\'' + p.id + '\')" style="padding:6px 8px;">删</button></div></td></tr>';
         }
       }
       return '<h1 class="page-title">项目</h1><button class="btn" onclick="openProjectModal()">➕ 新建项目</button><div class="card" style="margin-top:20px;"><div class="table-wrap"><table><thead><tr><th>项目名称</th><th>客户</th><th>报价</th><th>成本</th><th>已收</th><th>利润</th><th>应收</th><th>状态</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
