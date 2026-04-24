@@ -282,9 +282,21 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // 数据操作
+    // 本地缓存读写
+    function saveCache(table, data) {
+      try { localStorage.setItem('studio_' + table, JSON.stringify(data)); } catch(e) {}
+    }
+    function loadCache(table) {
+      try {
+        var d = localStorage.getItem('studio_' + table);
+        return d ? JSON.parse(d) : null;
+      } catch(e) { return null; }
+    }
+
     async function dbGet(table) {
       const { data, error } = await supabaseClient.from(table).select('*').order('created_at', { ascending: false });
       if (error) { console.error(error); return []; }
+      if (data) saveCache(table, data);
       return data || [];
     }
 
@@ -398,8 +410,8 @@
       document.getElementById('page').innerHTML = content;
     }
 
-    async function renderOverview() {
-      var ps = await dbGet('projects');
+    async function renderOverview(ps) {
+      if (!ps) ps = await dbGet('projects');
       var currentYear = new Date().getFullYear();
       var yearlyStats = await getYearlyStats();
       var years = Object.keys(yearlyStats).sort((a, b) => b - a);
@@ -773,9 +785,26 @@
     // 启动
     async function init() {
       var ready = await initDatabase();
-      if (ready) {
-        showPage('overview');
+      if (!ready) return;
+      
+      // 先读本地缓存，立刻渲染（无需等待网络）
+      var cached = loadCache('projects');
+      if (cached && cached.length > 0) {
+        var html = await renderOverview(cached);
+        document.getElementById('page').innerHTML = html;
       }
+      
+      // 后台静默刷新最新数据，对比有变化则重新渲染
+      (async function() {
+        var fresh = await dbGet('projects');
+        // 对比新鲜数据和页面渲染用的数据
+        var renderedData = JSON.stringify(cached);
+        var freshData = JSON.stringify(fresh);
+        if (renderedData !== freshData) {
+          var h = await renderOverview(fresh);
+          document.getElementById('page').innerHTML = h;
+        }
+      })();
     }
 
     // 页面加载完成后初始化
