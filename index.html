@@ -315,9 +315,17 @@
     }
 
     async function dbGet(table) {
-      const { data, error } = await supabaseClient.from(table).select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient.from(table).select('*');
       if (error) { console.error(error); return []; }
-      if (data) saveCache(table, data);
+      if (data) {
+        // 前端排序，避免 .order() 参数编码问题
+        data.sort(function(a, b) {
+          var ta = a.created_at ? new Date(a.created_at) : new Date(0);
+          var tb = b.created_at ? new Date(b.created_at) : new Date(0);
+          return tb - ta;
+        });
+        saveCache(table, data);
+      }
       return data || [];
     }
 
