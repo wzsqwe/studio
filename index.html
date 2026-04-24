@@ -138,7 +138,170 @@
     .loading { text-align: center; padding: 40px; color: #86868b; }
     .error { background: #ff3b30; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; }
     
-    /* 年份视图样式 */
+    /* ===== 器材页面紧凑样式 ===== */
+    .eq-stats-strip {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: white;
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #86868b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      flex-wrap: wrap;
+      row-gap: 4px;
+    }
+    .eq-stat-label { font-size: 11px; color: #acacac; margin-right: 3px; }
+    .eq-stat-sep { color: #e0e0e0; margin: 0 10px; font-size: 14px; }
+    .eq-stat-strip strong { color: #1d1d1f; font-weight: 600; margin: 0 2px; }
+
+    .eq-cat-block { margin-bottom: 12px; }
+    .eq-cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px;
+      margin-bottom: 4px;
+    }
+    .eq-cat-label { font-size: 12px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .eq-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      transition: box-shadow 0.2s;
+      min-height: 44px;
+    }
+    .eq-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .eq-row.dragging { opacity: 0.5; }
+    .eq-row.drag-over { border: 2px dashed #0071e3; }
+    .eq-drag-handle { cursor: grab; color: #cacaca; font-size: 16px; flex-shrink: 0; padding: 2px 4px; user-select: none; }
+    .eq-drag-handle:active { cursor: grabbing; }
+    .eq-name {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1d1d1f;
+      font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .eq-name:hover { border-color: rgba(0,113,227,0.3); background: rgba(255,255,255,0.9); }
+    .eq-name:focus { outline: none; border-color: #0071e3; background: white; box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
+    .eq-meta {
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      color: #acacac;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .eq-num {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-size: 11px;
+      color: #86868b;
+      width: 48px;
+      text-align: right;
+      font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .eq-num:hover { border-color: rgba(0,113,227,0.3); background: rgba(255,255,255,0.9); }
+    .eq-num:focus { outline: none; border-color: #0071e3; background: white; }
+    .eq-bar-wrap { width: 60px; flex-shrink: 0; background: rgba(0,0,0,0.06); border-radius: 2px; height: 5px; overflow: hidden; }
+    .eq-bar { height: 100%; border-radius: 2px; transition: width 0.3s; }
+    .eq-roi {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(0,113,227,0.08);
+      color: #0071e3;
+      flex-shrink: 0;
+    }
+    .eq-roi.done { background: rgba(52,199,89,0.1); color: #34c759; }
+    .eq-del {
+      background: transparent;
+      border: none;
+      color: #cacaca;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .eq-del:hover { background: rgba(255,59,48,0.1); color: #ff3b30; }
+
+    /* 排行紧凑样式 */
+    .eq-rank-block {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .eq-rank-section { flex: 1; background: white; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .eq-rank-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #86868b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .eq-zero-badge {
+      background: rgba(255,59,48,0.1);
+      color: #ff3b30;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 10px;
+    }
+    .eq-rank-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    .eq-rank-item:last-child { border-bottom: none; }
+    .eq-rank-num { font-size: 12px; width: 20px; text-align: center; flex-shrink: 0; color: #86868b; }
+    .eq-rank-name {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1d1d1f;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .eq-rank-bar { width: 50px; flex-shrink: 0; height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; }
+    .eq-rank-val { font-size: 11px; font-weight: 600; color: #0071e3; flex-shrink: 0; min-width: 36px; text-align: right; }
+    .eq-rank-val.muted { color: #cacaca; }
+
+    /* 快捷操作 */
+    .eq-quick-ops {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 12px 0;
+    }
+
+    /* ===== 年份视图样式 ===== */
     .year-selector { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
     .year-tab {
       padding: 10px 20px;
@@ -661,9 +824,7 @@
       var rels = await dbGet('project_equipment');
       var usageLogs = await dbGet('equipment_usage_log');
 
-      // 计算每件器材的使用统计（日志表优先，其次 rental_count，最后 project_equipment 记录数）
       function getEqStats(eq) {
-        // 优先：从日志表统计
         if (usageLogs && usageLogs.length > 0) {
           var logCount = 0;
           for (var li = 0; li < usageLogs.length; li++) {
@@ -671,9 +832,7 @@
           }
           if (logCount > 0) return logCount;
         }
-        // 其次：rental_count 字段
         if (eq.rental_count != null) return eq.rental_count;
-        // 最后：project_equipment 关联数
         var times = 0;
         for (var j = 0; j < rels.length; j++) {
           if (rels[j].equipment_id === eq.id) times++;
@@ -681,174 +840,127 @@
         return times;
       }
 
-      var catLabels = { '摄影机': '📷', '镜头': '🔭', '配件': '🎒', '移动器材': '🚗' };
-      var html = '<h1 class="page-title">器材</h1>';
-      html += '<div class="card" style="margin-bottom:20px;padding:20px 24px;">';
-
-      // 器材总览统计
-      var totalValue = 0, totalRented = 0, totalRevenue = 0;
-      for (var ti = 0; ti < eqs.length; ti++) {
-        totalValue += (eqs[ti].purchase_price || 0);
-        var t = getEqStats(eqs[ti]);
-        totalRented += t;
-        totalRevenue += t * (eqs[ti].rental_price || 0);
-      }
-      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">' +
-        '<div style="background:linear-gradient(135deg,rgba(0,113,227,0.1),rgba(88,86,214,0.1));border-radius:16px;padding:20px;text-align:center;">' +
-          '<div style="font-size:13px;color:#86868b;margin-bottom:6px;">器材总价值</div>' +
-          '<div style="font-size:24px;font-weight:700;color:#1d1d1f;">' + fmt(totalValue) + '</div>' +
-          '<div style="font-size:12px;color:#86868b;margin-top:4px;">' + eqs.length + ' 件器材</div>' +
-        '</div>' +
-        '<div style="background:linear-gradient(135deg,rgba(52,199,89,0.1),rgba(40,199,128,0.1));border-radius:16px;padding:20px;text-align:center;">' +
-          '<div style="font-size:13px;color:#86868b;margin-bottom:6px;">累计出租次数</div>' +
-          '<div style="font-size:24px;font-weight:700;color:#34c759;">' + totalRented + '</div>' +
-          '<div style="font-size:12px;color:#86868b;margin-top:4px;">总收入 ' + fmt(totalRevenue) + '</div>' +
-        '</div>' +
-        '<div style="background:linear-gradient(135deg,rgba(255,149,0,0.1),rgba(255,140,0,0.1));border-radius:16px;padding:20px;text-align:center;">' +
-          '<div style="font-size:13px;color:#86868b;margin-bottom:6px;">累计租金收入</div>' +
-          '<div style="font-size:24px;font-weight:700;color:#ff9500;">' + fmt(totalRevenue) + '</div>' +
-          '<div style="font-size:12px;color:#86868b;margin-top:4px;">回本率 ' + (totalValue > 0 ? Math.round(totalRevenue / totalValue * 100) : 0) + '%</div>' +
-        '</div>' +
-      '</div></div>';
-
-      // ===== 使用率排名 =====
-      // 给每件器材算好统计数据
+      // 预计算统计数据
       for (var ri = 0; ri < eqs.length; ri++) {
         eqs[ri]._times = getEqStats(eqs[ri]);
         eqs[ri]._revenue = eqs[ri]._times * (eqs[ri].rental_price || 0);
         eqs[ri]._progress = (eqs[ri].purchase_price || 0) > 0 ? Math.min(100, Math.round(eqs[ri]._revenue / (eqs[ri].purchase_price || 0) * 100)) : 0;
       }
-      // 按使用次数降序
-      var ranked = [].concat(eqs).sort(function(a, b) { return b._times - a._times; });
-      var top5 = ranked.slice(0, 10);
-      var zeroUse = ranked.filter(function(eq) { return eq._times === 0; });
-      var bottom5 = ranked.filter(function(eq) { return eq._times > 0; }).slice(-10);
+      var totalValue = 0, totalRented = 0, totalRevenue = 0;
+      for (var ti = 0; ti < eqs.length; ti++) {
+        totalValue += (eqs[ti].purchase_price || 0);
+        totalRented += eqs[ti]._times;
+        totalRevenue += eqs[ti]._revenue;
+      }
+      var roi = totalValue > 0 ? Math.round(totalRevenue / totalValue * 100) : 0;
 
-      var rankIcon = function(idx) {
-        if (idx === 0) return '🥇';
-        if (idx === 1) return '🥈';
-        if (idx === 2) return '🥉';
-        return '<span style="font-size:12px;color:#86868b;font-weight:600;">' + (idx + 1) + '</span>';
-      };
-      var rankBarColor = function(times, max) {
-        if (max === 0) return '#e0e0e0';
-        var ratio = times / max;
-        if (ratio >= 0.8) return '#34c759';
-        if (ratio >= 0.4) return '#ff9500';
-        return '#0071e3';
-      };
-      var maxTimes = top5.length > 0 ? top5[0]._times : 0;
-
-      var rankRow = function(eq, idx, maxT, isBottom) {
-        var catIcon = catLabels[eq.category] || '📦';
-        var barColor = rankBarColor(eq._times, maxT);
-        var barWidth = maxT > 0 ? Math.max(5, Math.round((eq._times / maxT) * 100)) : 5;
-        var rowBg = isBottom && idx === (bottom5.length - 1) ? 'rgba(255,59,48,0.05)' : 'rgba(0,0,0,0.02)';
-        var rowBorder = isBottom && idx === (bottom5.length - 1) ? 'border:1px solid rgba(255,59,48,0.2);' : '';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:' + rowBg + ';border-radius:8px;margin-bottom:4px;' + rowBorder + '">' +
-          '<div style="width:28px;text-align:center;flex-shrink:0;">' + rankIcon(idx) + '</div>' +
-          '<div style="flex:1;min-width:0;">' +
-            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
-              '<span style="font-size:12px;">' + catIcon + '</span>' +
-              '<span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + eq.name + '</span>' +
-            '</div>' +
-            '<div style="background:rgba(0,0,0,0.06);border-radius:3px;height:5px;overflow:hidden;">' +
-              '<div style="background:' + barColor + ';height:100%;width:' + barWidth + '%;border-radius:3px;"></div>' +
-            '</div>' +
-          '</div>' +
-          '<div style="text-align:right;flex-shrink:0;min-width:60px;">' +
-            '<div style="font-size:16px;font-weight:700;color:' + (eq._times > 0 ? '#0071e3' : '#86868b') + ';">' + eq._times + '</div>' +
-            '<div style="font-size:10px;color:#86868b;">次 · ' + fmt(eq._revenue) + '</div>' +
-          '</div>' +
-        '</div>';
-      };
-
-      var topHtml = top5.map(function(eq, i) { return rankRow(eq, i, maxTimes, false); }).join('');
-      var bottomHtml = bottom5.reverse().map(function(eq, i) {
-        return rankRow(eq, bottom5.length - 1 - i, maxTimes, true);
-      }).join('');
-
-      html += '<div class="card"><div class="card-header"><div class="card-title">📊 使用率排行</div></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">' +
-          '<div><div style="font-size:13px;font-weight:600;color:#ff3b30;margin-bottom:10px;display:flex;align-items:center;gap:6px;">🔥 使用率最高</div>' + topHtml + '</div>' +
-          '<div><div style="font-size:13px;font-weight:600;color:#86868b;margin-bottom:10px;display:flex;align-items:center;gap:6px;">❄️ 近期未使用' +
-            (zeroUse.length > 0 ? ' <span style="background:rgba(255,59,48,0.1);color:#ff3b30;font-size:11px;padding:2px 6px;border-radius:10px;font-weight:600;">' + zeroUse.length + '件</span>' : '') +
-          '</div>' + bottomHtml + '</div>' +
-        '</div></div>';
-
-      // 分类展示器材
+      var catLabels = { '摄影机': '📷', '镜头': '🔭', '配件': '🎒', '移动器材': '🚗' };
       var catOrder = ['摄影机', '镜头', '配件', '移动器材'];
+      var catIcons = { '摄影机': '📷', '镜头': '🔭', '配件': '🎒', '移动器材': '🚗' };
+
+      var html = '<h1 class="page-title">器材</h1>';
+
+      // ===== 紧凑统计条 =====
+      html += '<div class="eq-stats-strip">' +
+        '<span><span class="eq-stat-label">器材</span><strong>' + eqs.length + '</strong>件</span>' +
+        '<span class="eq-stat-sep">·</span>' +
+        '<span><span class="eq-stat-label">总价值</span><strong>' + fmt(totalValue) + '</strong></span>' +
+        '<span class="eq-stat-sep">·</span>' +
+        '<span><span class="eq-stat-label">出租</span><strong style="color:#34c759;">' + totalRented + '</strong>次</span>' +
+        '<span class="eq-stat-sep">·</span>' +
+        '<span><span class="eq-stat-label">回本</span><strong style="color:' + (roi >= 80 ? '#34c759' : roi >= 40 ? '#ff9500' : '#0071e3') + ';">' + roi + '%</strong></span>' +
+        '<span class="eq-stat-sep">·</span>' +
+        '<span><span class="eq-stat-label">租金</span><strong style="color:#ff9500;">' + fmt(totalRevenue) + '</strong></span>' +
+      '</div>';
+
+      // ===== 分类器材列表 =====
       for (var ci = 0; ci < catOrder.length; ci++) {
         var catName = catOrder[ci];
         var items = eqs.filter(function(eq) { return eq.category === catName; });
         if (!items || items.length === 0) continue;
-
-        // 按 display_order 排序，无则按创建顺序
         items.sort(function(a, b) { return (a.display_order || 999) - (b.display_order || 999); });
 
-        html += '<div class="card"><div class="card-header"><div class="card-title">' + (catLabels[catName] || '📦') + ' ' + catName + ' <span style="font-size:12px;font-weight:400;color:#86868b;">（拖拽排序，点击名称/价格直接编辑）</span></div>' +
-          '<button class="btn" style="font-size:12px;padding:4px 10px;" onclick="openEquipmentModal()">➕ 添加</button></div>';
+        html += '<div class="eq-cat-block">' +
+          '<div class="eq-cat-header">' +
+            '<span class="eq-cat-label">' + catIcons[catName] + ' ' + catName + '</span>' +
+            '<button class="btn btn-xs" onclick="openEquipmentModal()">➕</button>' +
+          '</div>';
 
         for (var ki = 0; ki < items.length; ki++) {
           var eq = items[ki];
-          var times = getEqStats(eq);
-          var revenue = times * (eq.rental_price || 0);
-          var remaining = Math.max(0, (eq.purchase_price || 0) - revenue);
-          var progress = (eq.purchase_price || 0) > 0 ? Math.min(100, Math.round(revenue / (eq.purchase_price || 0) * 100)) : 0;
-          var breakEven = (eq.rental_price || 0) > 0 ? Math.ceil((eq.purchase_price || 0) / (eq.rental_price || 0)) : 0;
+          var progress = eq._progress;
           var barColor = progress >= 100 ? '#34c759' : progress >= 50 ? '#ff9500' : '#0071e3';
-          var statusLabel = progress >= 100 ? '<span class="tag tag-success">已回本</span>' :
-            '<span class="tag tag-warning">差 ' + fmt(remaining) + '</span>';
-          var eqIdAttr = "'" + eq.id + "'";
-          var orderAttr = "data-order='" + ki + "'";
-          var catAttr = "data-cat='" + catName + "'";
+          var roiTag = progress >= 100 ? '<span class="eq-roi done">已回本</span>' :
+            (eq.purchase_price > 0 ? '<span class="eq-roi">' + progress + '%</span>' : '');
 
-          html += '<div class="eq-item" ' + orderAttr + ' ' + catAttr + ' draggable="true" data-id="' + eq.id + '" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:all 0.2s;" ' +
+          html += '<div class="eq-row" ' +
+            'draggable="true" data-id="' + eq.id + '" data-cat="' + catName + '" data-order="' + ki + '" ' +
             'ondragstart="eqDragStart(event)" ondragover="eqDragOver(event)" ondrop="eqDrop(event)" ondragend="eqDragEnd(event)">' +
-            '<div class="eq-card-inner">' +
-              '<div class="eq-drag-handle" title="拖拽排序">⋮⋮</div>' +
-              '<div class="eq-content">' +
-                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
-                  '<input class="eq-inline-input eq-name-input" data-eqid="' + eq.id + '" value="' + (eq.name || '') + '" ' +
-                    'onblur="eqInlineSave(this.dataset.eqid, \'name\', this.value)" ' +
-                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
-                    'title="点击编辑名称" placeholder="器材名称">' +
-                '</div>' +
-                '<div style="display:flex;gap:12px;font-size:12px;color:#86868b;align-items:center;flex-wrap:wrap;">' +
-                  '<span>购入 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.purchase_price || '') + '" ' +
-                    'onblur="eqInlineSave(this.dataset.eqid, \'purchase_price\', this.value)" ' +
-                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
-                    'title="点击编辑购入价格">元</span>' +
-                  '<span>出租价 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
-                    'onblur="eqInlineSave(this.dataset.eqid, \'rental_price\', this.value)" ' +
-                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
-                    'title="点击编辑出租价格">元/次</span>' +
-                  '<span>出租 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.rental_count != null ? eq.rental_count : times) + '" ' +
-                    'onblur="eqInlineSave(this.dataset.eqid, \'rental_count\', this.value)" ' +
-                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
-                    'title="点击编辑出租次数">次</span>' +
-                  '<span style="margin-left:auto;">' + statusLabel + '</span>' +
-                '</div>' +
-              '</div>' +
-              '<div class="eq-actions">' +
-                '<button class="eq-del-btn" onclick="eqDelete(\'' + eq.id + '\')" title="删除">✕</button>' +
-              '</div>' +
+            '<div class="eq-drag-handle" title="拖拽排序">⋮⋮</div>' +
+            '<input class="eq-name" data-eqid="' + eq.id + '" value="' + (eq.name || '') + '" ' +
+              'onblur="eqInlineSave(this.dataset.eqid, \'name\', this.value)" ' +
+              'onkeydown="if(event.key===\'Enter\')this.blur()" title="点击编辑">' +
+            '<div class="eq-meta">' +
+              '<span>购 <input class="eq-num" data-eqid="' + eq.id + '" value="' + (eq.purchase_price || '') + '" ' +
+                'onblur="eqInlineSave(this.dataset.eqid, \'purchase_price\', this.value)" ' +
+                'onkeydown="if(event.key===\'Enter\')this.blur()">元</span>' +
+              '<span>租 <input class="eq-num" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
+                'onblur="eqInlineSave(this.dataset.eqid, \'rental_price\', this.value)" ' +
+                'onkeydown="if(event.key===\'Enter\')this.blur()">元</span>' +
+              '<span>次 <input class="eq-num" data-eqid="' + eq.id + '" value="' + (eq.rental_count != null ? eq.rental_count : eq._times) + '" ' +
+                'onblur="eqInlineSave(this.dataset.eqid, \'rental_count\', this.value)" ' +
+                'onkeydown="if(event.key===\'Enter\')this.blur()"></span>' +
             '</div>' +
-            '<div style="background:rgba(0,0,0,0.06);border-radius:4px;height:6px;margin-top:10px;overflow:hidden;">' +
-              '<div style="background:' + barColor + ';height:100%;width:' + progress + '%;border-radius:4px;transition:width 0.3s;"></div>' +
-            '</div>' +
-            '<div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-top:6px;">' +
-              '<span>累计收入 ' + fmt(revenue) + '</span>' +
-              '<span>回本 ' + progress + '% · 还差 <strong style="color:#ff3b30;">' + Math.max(0, breakEven - times) + '</strong> 次</span>' +
-            '</div>' +
+            '<div class="eq-bar-wrap"><div class="eq-bar" style="width:' + progress + '%;background:' + barColor + ';"></div></div>' +
+            roiTag +
+            '<button class="eq-del" onclick="eqDelete(\'' + eq.id + '\')" title="删除">✕</button>' +
           '</div>';
         }
         html += '</div>';
       }
 
-      html += '<div class="card" style="text-align:center;padding:24px;"><div style="color:#86868b;font-size:14px;margin-bottom:8px;">⚡ 快捷操作</div>' +
-        '<button class="btn" onclick="openEquipmentModal()">➕ 添加器材</button> ' +
-        '<button class="btn btn-secondary" onclick="showPage(\'projects\')">📋 查看项目</button>' +
+      // ===== 紧凑使用率排行（移到底部）=====
+      var ranked = [].concat(eqs).sort(function(a, b) { return b._times - a._times; });
+      var top5 = ranked.slice(0, 10);
+      var zeroUse = ranked.filter(function(eq) { return eq._times === 0; });
+      var maxTimes = top5.length > 0 ? top5[0]._times : 0;
+      var bottom5 = ranked.filter(function(eq) { return eq._times > 0; }).slice(-10);
+
+      if (top5.length > 0 || zeroUse.length > 0) {
+        html += '<div class="eq-rank-block">';
+        if (top5.length > 0) {
+          html += '<div class="eq-rank-section"><div class="eq-rank-title">🔥 TOP' + top5.length + '</div>';
+          top5.forEach(function(eq, i) {
+            var pct = maxTimes > 0 ? Math.round(eq._times / maxTimes * 100) : 0;
+            var color = pct >= 80 ? '#34c759' : pct >= 40 ? '#ff9500' : '#0071e3';
+            var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+            html += '<div class="eq-rank-item">' +
+              '<span class="eq-rank-num">' + medal + '</span>' +
+              '<span class="eq-rank-name">' + eq.name + '</span>' +
+              '<div class="eq-rank-bar"><div style="width:' + pct + '%;background:' + color + ';height:100%;border-radius:2px;"></div></div>' +
+              '<span class="eq-rank-val">' + eq._times + '次</span>' +
+            '</div>';
+          });
+          html += '</div>';
+        }
+        if (zeroUse.length > 0) {
+          html += '<div class="eq-rank-section"><div class="eq-rank-title">❄️ 未使用 <span class="eq-zero-badge">' + zeroUse.length + '</span></div>';
+          zeroUse.slice(0, 5).forEach(function(eq) {
+            html += '<div class="eq-rank-item">' +
+              '<span class="eq-rank-num">○</span>' +
+              '<span class="eq-rank-name">' + eq.name + '</span>' +
+              '<span class="eq-rank-val muted">0次</span>' +
+            '</div>';
+          });
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      // 快捷操作（移到排行后面，极简）
+      html += '<div class="eq-quick-ops">' +
+        '<button class="btn" onclick="openEquipmentModal()">➕ 添加器材</button>' +
+        '<button class="btn btn-secondary" onclick="showPage(\'projects\')">📋 项目</button>' +
       '</div>';
 
       return html;
