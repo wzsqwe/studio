@@ -144,122 +144,169 @@
       align-items: center;
       gap: 0;
       background: white;
-      border-radius: 12px;
-      padding: 12px 20px;
-      margin-bottom: 16px;
-      font-size: 13px;
+      border-radius: 10px;
+      padding: 8px 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
       color: #86868b;
       box-shadow: 0 1px 3px rgba(0,0,0,0.04);
       flex-wrap: wrap;
-      row-gap: 4px;
     }
-    .eq-stat-label { font-size: 11px; color: #acacac; margin-right: 3px; }
-    .eq-stat-sep { color: #e0e0e0; margin: 0 10px; font-size: 14px; }
+    .eq-stat-label { font-size: 10px; color: #b0b0b0; margin-right: 2px; }
+    .eq-stat-sep { color: #e0e0e0; margin: 0 8px; }
     .eq-stat-strip strong { color: #1d1d1f; font-weight: 600; margin: 0 2px; }
 
-    .eq-cat-block { margin-bottom: 12px; }
+    /* 两列器材卡片网格 */
+    .eq-cat-block { margin-bottom: 10px; }
     .eq-cat-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 4px;
+      padding: 4px 2px;
       margin-bottom: 4px;
     }
-    .eq-cat-label { font-size: 12px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .eq-cat-label { font-size: 11px; font-weight: 600; color: #b0b0b0; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .eq-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .eq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .eq-card {
       background: white;
       border-radius: 10px;
-      padding: 8px 10px;
-      margin-bottom: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-      transition: box-shadow 0.2s;
-      min-height: 44px;
+      padding: 10px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s, transform 0.15s;
+      cursor: default;
+      position: relative;
     }
-    .eq-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .eq-row.dragging { opacity: 0.5; }
-    .eq-row.drag-over { border: 2px dashed #0071e3; }
-    .eq-drag-handle { cursor: grab; color: #cacaca; font-size: 16px; flex-shrink: 0; padding: 2px 4px; user-select: none; }
-    .eq-drag-handle:active { cursor: grabbing; }
-    .eq-name {
+    .eq-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    .eq-card.dragging { opacity: 0.4; }
+    .eq-card.drag-over { outline: 2px dashed #0071e3; }
+
+    /* 卡片内部布局 */
+    .eq-card-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .eq-handle {
+      cursor: grab;
+      color: #d0d0d0;
+      font-size: 14px;
+      flex-shrink: 0;
+      padding: 2px;
+      user-select: none;
+    }
+    .eq-handle:active { cursor: grabbing; }
+    .eq-card-name {
       flex: 1;
-      min-width: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d1d1f;
       background: transparent;
       border: 1px solid transparent;
       border-radius: 4px;
-      padding: 3px 6px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #1d1d1f;
+      padding: 2px 4px;
       font-family: inherit;
+      min-width: 0;
       transition: border-color 0.2s, background 0.2s;
     }
-    .eq-name:hover { border-color: rgba(0,113,227,0.3); background: rgba(255,255,255,0.9); }
-    .eq-name:focus { outline: none; border-color: #0071e3; background: white; box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
-    .eq-meta {
-      display: flex;
-      gap: 10px;
-      font-size: 11px;
-      color: #acacac;
-      flex-shrink: 0;
-      align-items: center;
-    }
-    .eq-num {
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: 3px;
-      padding: 1px 4px;
-      font-size: 11px;
-      color: #86868b;
-      width: 48px;
-      text-align: right;
-      font-family: inherit;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .eq-num:hover { border-color: rgba(0,113,227,0.3); background: rgba(255,255,255,0.9); }
-    .eq-num:focus { outline: none; border-color: #0071e3; background: white; }
-    .eq-bar-wrap { width: 60px; flex-shrink: 0; background: rgba(0,0,0,0.06); border-radius: 2px; height: 5px; overflow: hidden; }
-    .eq-bar { height: 100%; border-radius: 2px; transition: width 0.3s; }
-    .eq-roi {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 10px;
-      background: rgba(0,113,227,0.08);
-      color: #0071e3;
-      flex-shrink: 0;
-    }
-    .eq-roi.done { background: rgba(52,199,89,0.1); color: #34c759; }
-    .eq-del {
+    .eq-card-name:hover { border-color: rgba(0,113,227,0.3); background: rgba(255,255,255,0.9); }
+    .eq-card-name:focus { outline: none; border-color: #0071e3; background: white; }
+    .eq-card-del {
       background: transparent;
       border: none;
-      color: #cacaca;
+      color: #d0d0d0;
       cursor: pointer;
-      font-size: 14px;
-      padding: 2px 6px;
+      font-size: 13px;
+      padding: 2px 4px;
       border-radius: 4px;
       flex-shrink: 0;
       transition: all 0.2s;
     }
-    .eq-del:hover { background: rgba(255,59,48,0.1); color: #ff3b30; }
+    .eq-card-del:hover { background: rgba(255,59,48,0.1); color: #ff3b30; }
+
+    /* 卡片底部数据行 */
+    .eq-card-nums {
+      display: flex;
+      gap: 0;
+      align-items: center;
+      flex-wrap: wrap;
+      row-gap: 3px;
+    }
+    .eq-card-num-item {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 11px;
+      color: #b0b0b0;
+      flex-shrink: 0;
+    }
+    .eq-card-num-item + .eq-card-num-item::before {
+      content: '·';
+      margin: 0 4px;
+      color: #e0e0e0;
+    }
+    .eq-card-num {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      font-family: inherit;
+      width: 40px;
+      text-align: right;
+      transition: border-color 0.2s;
+    }
+    .eq-card-num:hover { border-color: rgba(0,113,227,0.3); }
+    .eq-card-num:focus { outline: none; border-color: #0071e3; background: white; }
+
+    /* 进度条 */
+    .eq-card-bar-wrap {
+      background: rgba(0,0,0,0.05);
+      border-radius: 2px;
+      height: 4px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .eq-card-bar { height: 100%; border-radius: 2px; transition: width 0.3s; }
+    .eq-card-roi {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 8px;
+      background: rgba(0,113,227,0.08);
+      color: #0071e3;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .eq-card-roi.done { background: rgba(52,199,89,0.1); color: #34c759; }
+    .eq-card-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
 
     /* 排行紧凑样式 */
     .eq-rank-block {
       display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-    .eq-rank-section { flex: 1; background: white; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .eq-rank-section { flex: 1; background: white; border-radius: 10px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
     .eq-rank-title {
       font-size: 11px;
       font-weight: 600;
-      color: #86868b;
+      color: #b0b0b0;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -269,28 +316,20 @@
       color: #ff3b30;
       font-size: 10px;
       padding: 1px 5px;
-      border-radius: 10px;
+      border-radius: 8px;
     }
     .eq-rank-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 4px 0;
+      gap: 6px;
+      padding: 3px 0;
       border-bottom: 1px solid rgba(0,0,0,0.03);
     }
     .eq-rank-item:last-child { border-bottom: none; }
-    .eq-rank-num { font-size: 12px; width: 20px; text-align: center; flex-shrink: 0; color: #86868b; }
-    .eq-rank-name {
-      flex: 1;
-      font-size: 12px;
-      font-weight: 500;
-      color: #1d1d1f;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .eq-rank-bar { width: 50px; flex-shrink: 0; height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; }
-    .eq-rank-val { font-size: 11px; font-weight: 600; color: #0071e3; flex-shrink: 0; min-width: 36px; text-align: right; }
+    .eq-rank-num { font-size: 11px; width: 18px; text-align: center; flex-shrink: 0; color: #b0b0b0; }
+    .eq-rank-name { flex: 1; font-size: 11px; font-weight: 500; color: #1d1d1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eq-rank-bar { width: 40px; flex-shrink: 0; height: 3px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; }
+    .eq-rank-val { font-size: 11px; font-weight: 600; color: #0071e3; flex-shrink: 0; }
     .eq-rank-val.muted { color: #cacaca; }
 
     /* 快捷操作 */
@@ -298,7 +337,7 @@
       display: flex;
       gap: 8px;
       justify-content: center;
-      padding: 12px 0;
+      padding: 10px 0;
     }
 
     /* ===== 年份视图样式 ===== */
@@ -873,7 +912,7 @@
         '<span><span class="eq-stat-label">租金</span><strong style="color:#ff9500;">' + fmt(totalRevenue) + '</strong></span>' +
       '</div>';
 
-      // ===== 分类器材列表 =====
+      // ===== 分类器材列表（两列卡片）=====
       for (var ci = 0; ci < catOrder.length; ci++) {
         var catName = catOrder[ci];
         var items = eqs.filter(function(eq) { return eq.category === catName; });
@@ -883,40 +922,46 @@
         html += '<div class="eq-cat-block">' +
           '<div class="eq-cat-header">' +
             '<span class="eq-cat-label">' + catIcons[catName] + ' ' + catName + '</span>' +
-            '<button class="btn btn-xs" onclick="openEquipmentModal()">➕</button>' +
-          '</div>';
+            '<button class="btn" style="font-size:11px;padding:3px 8px;" onclick="openEquipmentModal()">➕</button>' +
+          '</div>' +
+          '<div class="eq-grid">';
 
         for (var ki = 0; ki < items.length; ki++) {
           var eq = items[ki];
           var progress = eq._progress;
           var barColor = progress >= 100 ? '#34c759' : progress >= 50 ? '#ff9500' : '#0071e3';
-          var roiTag = progress >= 100 ? '<span class="eq-roi done">已回本</span>' :
-            (eq.purchase_price > 0 ? '<span class="eq-roi">' + progress + '%</span>' : '');
+          var roiTag = progress >= 100 ? '<span class="eq-card-roi done">已回本</span>' :
+            (eq.purchase_price > 0 ? '<span class="eq-card-roi">' + progress + '%</span>' : '');
+          var times = eq.rental_count != null ? eq.rental_count : eq._times;
 
-          html += '<div class="eq-row" ' +
+          html += '<div class="eq-card" ' +
             'draggable="true" data-id="' + eq.id + '" data-cat="' + catName + '" data-order="' + ki + '" ' +
             'ondragstart="eqDragStart(event)" ondragover="eqDragOver(event)" ondrop="eqDrop(event)" ondragend="eqDragEnd(event)">' +
-            '<div class="eq-drag-handle" title="拖拽排序">⋮⋮</div>' +
-            '<input class="eq-name" data-eqid="' + eq.id + '" value="' + (eq.name || '') + '" ' +
-              'onblur="eqInlineSave(this.dataset.eqid, \'name\', this.value)" ' +
-              'onkeydown="if(event.key===\'Enter\')this.blur()" title="点击编辑">' +
-            '<div class="eq-meta">' +
-              '<span>购 <input class="eq-num" data-eqid="' + eq.id + '" value="' + (eq.purchase_price || '') + '" ' +
-                'onblur="eqInlineSave(this.dataset.eqid, \'purchase_price\', this.value)" ' +
-                'onkeydown="if(event.key===\'Enter\')this.blur()">元</span>' +
-              '<span>租 <input class="eq-num" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
-                'onblur="eqInlineSave(this.dataset.eqid, \'rental_price\', this.value)" ' +
-                'onkeydown="if(event.key===\'Enter\')this.blur()">元</span>' +
-              '<span>次 <input class="eq-num" data-eqid="' + eq.id + '" value="' + (eq.rental_count != null ? eq.rental_count : eq._times) + '" ' +
-                'onblur="eqInlineSave(this.dataset.eqid, \'rental_count\', this.value)" ' +
-                'onkeydown="if(event.key===\'Enter\')this.blur()"></span>' +
+            '<div class="eq-card-top">' +
+              '<span class="eq-handle" title="拖拽排序">⋮</span>' +
+              '<input class="eq-card-name" data-eqid="' + eq.id + '" value="' + (eq.name || '') + '" ' +
+                'onblur="eqInlineSave(this.dataset.eqid, \'name\', this.value)" ' +
+                'onkeydown="if(event.key===\'Enter\')this.blur()" title="点击编辑名称">' +
+              '<button class="eq-card-del" onclick="eqDelete(\'' + eq.id + '\')" title="删除">✕</button>' +
             '</div>' +
-            '<div class="eq-bar-wrap"><div class="eq-bar" style="width:' + progress + '%;background:' + barColor + ';"></div></div>' +
-            roiTag +
-            '<button class="eq-del" onclick="eqDelete(\'' + eq.id + '\')" title="删除">✕</button>' +
+            '<div class="eq-card-meta-row">' +
+              '<div class="eq-card-nums">' +
+                '<div class="eq-card-num-item">购<input class="eq-card-num" data-eqid="' + eq.id + '" value="' + (eq.purchase_price || '') + '" ' +
+                  'onblur="eqInlineSave(this.dataset.eqid, \'purchase_price\', this.value)" ' +
+                  'onkeydown="if(event.key===\'Enter\')this.blur()"></div>' +
+                '<div class="eq-card-num-item">租<input class="eq-card-num" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
+                  'onblur="eqInlineSave(this.dataset.eqid, \'rental_price\', this.value)" ' +
+                  'onkeydown="if(event.key===\'Enter\')this.blur()"></div>' +
+                '<div class="eq-card-num-item">次<input class="eq-card-num" data-eqid="' + eq.id + '" value="' + times + '" ' +
+                  'onblur="eqInlineSave(this.dataset.eqid, \'rental_count\', this.value)" ' +
+                  'onkeydown="if(event.key===\'Enter\')this.blur()"></div>' +
+              '</div>' +
+              roiTag +
+            '</div>' +
+            '<div class="eq-card-bar-wrap"><div class="eq-card-bar" style="width:' + progress + '%;background:' + barColor + ';"></div></div>' +
           '</div>';
         }
-        html += '</div>';
+        html += '</div></div>';
       }
 
       // ===== 紧凑使用率排行（移到底部）=====
@@ -1054,7 +1099,7 @@
     function eqDragEnd(e) {
       _eqDraggedId = null;
       _eqDraggedCat = null;
-      document.querySelectorAll('.eq-item').forEach(function(el) {
+      document.querySelectorAll('.eq-card').forEach(function(el) {
         el.classList.remove('dragging', 'drag-over');
       });
     }
