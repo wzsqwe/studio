@@ -399,8 +399,11 @@
       document.getElementById('page').innerHTML = content;
       
       try {
-        if (name === 'overview') content = await renderOverview();
-        else if (name === 'projects') content = await renderProjects();
+        if (name === 'overview') {
+          content = await renderOverview();
+          // 缓存渲染结果
+          localStorage.setItem('studio_overview_html', content);
+        } else if (name === 'projects') content = await renderProjects();
         else if (name === 'clients') content = await renderClients();
         else if (name === 'transactions') content = await renderTransactions();
       } catch (e) {
@@ -787,22 +790,22 @@
       var ready = await initDatabase();
       if (!ready) return;
       
-      // 先读本地缓存，立刻渲染（无需等待网络）
-      var cached = loadCache('projects');
-      if (cached && cached.length > 0) {
-        var html = await renderOverview(cached);
-        document.getElementById('page').innerHTML = html;
+      // 第1步：立刻显示缓存的 HTML（零等待）
+      var cachedHtml = localStorage.getItem('studio_overview_html');
+      var cachedProjects = loadCache('projects');
+      if (cachedHtml && cachedProjects && cachedProjects.length > 0) {
+        document.getElementById('page').innerHTML = cachedHtml;
       }
       
-      // 后台静默刷新最新数据，对比有变化则重新渲染
+      // 第2步：后台拉取最新数据，重新渲染并缓存
       (async function() {
-        var fresh = await dbGet('projects');
-        // 对比新鲜数据和页面渲染用的数据
-        var renderedData = JSON.stringify(cached);
-        var freshData = JSON.stringify(fresh);
-        if (renderedData !== freshData) {
-          var h = await renderOverview(fresh);
-          document.getElementById('page').innerHTML = h;
+        var ps = await dbGet('projects');
+        var html = await renderOverview(ps);
+        localStorage.setItem('studio_overview_html', html);
+        // 对比是否有变化
+        var oldHtml = document.getElementById('page').innerHTML;
+        if (oldHtml !== html && oldHtml.indexOf('加载中') === -1) {
+          document.getElementById('page').innerHTML = html;
         }
       })();
     }
