@@ -248,6 +248,26 @@
       .main { padding: 24px 16px; }
       .page-title { font-size: 24px; }
     }
+    /* 器材内联编辑 */
+    .eq-item { position: relative; cursor: default; }
+    .eq-item:hover { transform: translateY(-1px); box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .eq-item.dragging { opacity: 0.5; }
+    .eq-item.drag-over { border: 2px dashed #0071e3; }
+    .eq-drag-handle { cursor: grab; color: #86868b; padding: 4px 8px; user-select: none; font-size: 18px; flex-shrink: 0; }
+    .eq-drag-handle:active { cursor: grabbing; }
+    .eq-inline-input { background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 2px 6px; font-size: inherit; font-family: inherit; color: inherit; width: 100%; transition: border-color 0.2s, background 0.2s; }
+    .eq-inline-input:hover { border-color: rgba(0,113,227,0.3); background: rgba(255,255,255,0.8); }
+    .eq-inline-input:focus { outline: none; border-color: #0071e3; background: white; box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
+    .eq-name-input { font-size: 15px; font-weight: 600; color: #1d1d1f; }
+    .eq-price-input { font-size: 12px; color: #86868b; width: 80px; text-align: right; }
+    .eq-save-hint { position: absolute; right: 8px; top: 8px; font-size: 11px; color: #34c759; opacity: 0; transition: opacity 0.2s; }
+    .eq-save-hint.show { opacity: 1; }
+    .eq-actions { display: flex; gap: 4px; margin-left: 8px; }
+    .eq-del-btn { background: transparent; border: none; color: #86868b; cursor: pointer; font-size: 16px; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; }
+    .eq-del-btn:hover { background: rgba(255,59,48,0.1); color: #ff3b30; }
+    .eq-card-inner { display: flex; align-items: flex-start; gap: 8px; }
+    .eq-content { flex: 1; min-width: 0; }
+    .eq-bottom { display: flex; justify-content: space-between; font-size: 12px; color: #86868b; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -611,15 +631,6 @@
     async function renderEquipment() {
       var eqs = await dbGet('equipment');
       var rels = await dbGet('project_equipment');
-      var ps = await dbGet('projects');
-
-      // 按类别分组
-      var cats = { '摄影机': [], '镜头': [], '配件': [], '移动器材': [] };
-      for (var i = 0; i < eqs.length; i++) {
-        var cat = eqs[i].category || '其他';
-        if (!cats[cat]) cats[cat] = [];
-        cats[cat].push(eqs[i]);
-      }
 
       // 计算每件器材的使用统计
       function getEqStats(eqId) {
@@ -632,7 +643,7 @@
 
       var catLabels = { '摄影机': '📷', '镜头': '🔭', '配件': '🎒', '移动器材': '🚗' };
       var html = '<h1 class="page-title">器材</h1>';
-      html += '<div class="card" style="margin-bottom:20px;"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">';
+      html += '<div class="card" style="margin-bottom:20px;padding:20px 24px;">';
 
       // 器材总览统计
       var totalValue = 0, totalRented = 0, totalRevenue = 0;
@@ -642,21 +653,36 @@
         totalRented += t;
         totalRevenue += t * (eqs[ti].rental_price || 0);
       }
-      html += '<div class="income-chart" style="flex:1;min-width:280px;">' +
-        '<div class="income-card"><div class="income-label">器材总价值</div><div class="income-value" style="font-size:22px;">' + fmt(totalValue) + '</div><div class="income-sub">' + eqs.length + ' 件器材</div></div>' +
-        '<div class="income-card green"><div class="income-label">累计出租次数</div><div class="income-value" style="font-size:22px;">' + totalRented + '</div><div class="income-sub">累计总收入</div></div>' +
-        '<div class="income-card orange"><div class="income-label">累计租金收入</div><div class="income-value" style="font-size:22px;">' + fmt(totalRevenue) + '</div><div class="income-sub">回本率 ' + (totalValue > 0 ? Math.round(totalRevenue / totalValue * 100) : 0) + '%</div></div>' +
-        '</div>';
-      html += '</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">' +
+        '<div style="background:linear-gradient(135deg,rgba(0,113,227,0.1),rgba(88,86,214,0.1));border-radius:16px;padding:20px;text-align:center;">' +
+          '<div style="font-size:13px;color:#86868b;margin-bottom:6px;">器材总价值</div>' +
+          '<div style="font-size:24px;font-weight:700;color:#1d1d1f;">' + fmt(totalValue) + '</div>' +
+          '<div style="font-size:12px;color:#86868b;margin-top:4px;">' + eqs.length + ' 件器材</div>' +
+        '</div>' +
+        '<div style="background:linear-gradient(135deg,rgba(52,199,89,0.1),rgba(40,199,128,0.1));border-radius:16px;padding:20px;text-align:center;">' +
+          '<div style="font-size:13px;color:#86868b;margin-bottom:6px;">累计出租次数</div>' +
+          '<div style="font-size:24px;font-weight:700;color:#34c759;">' + totalRented + '</div>' +
+          '<div style="font-size:12px;color:#86868b;margin-top:4px;">总收入 ' + fmt(totalRevenue) + '</div>' +
+        '</div>' +
+        '<div style="background:linear-gradient(135deg,rgba(255,149,0,0.1),rgba(255,140,0,0.1));border-radius:16px;padding:20px;text-align:center;">' +
+          '<div style="font-size:13px;color:#86868b;margin-bottom:6px;">累计租金收入</div>' +
+          '<div style="font-size:24px;font-weight:700;color:#ff9500;">' + fmt(totalRevenue) + '</div>' +
+          '<div style="font-size:12px;color:#86868b;margin-top:4px;">回本率 ' + (totalValue > 0 ? Math.round(totalRevenue / totalValue * 100) : 0) + '%</div>' +
+        '</div>' +
+      '</div></div>';
 
       // 分类展示器材
       var catOrder = ['摄影机', '镜头', '配件', '移动器材'];
       for (var ci = 0; ci < catOrder.length; ci++) {
         var catName = catOrder[ci];
-        var items = cats[catName];
+        var items = eqs.filter(function(eq) { return eq.category === catName; });
         if (!items || items.length === 0) continue;
 
-        html += '<div class="card"><div class="card-header"><div class="card-title">' + (catLabels[catName] || '📦') + ' ' + catName + '</div></div>';
+        // 按 display_order 排序，无则按创建顺序
+        items.sort(function(a, b) { return (a.display_order || 999) - (b.display_order || 999); });
+
+        html += '<div class="card"><div class="card-header"><div class="card-title">' + (catLabels[catName] || '📦') + ' ' + catName + ' <span style="font-size:12px;font-weight:400;color:#86868b;">（拖拽排序，点击名称/价格直接编辑）</span></div>' +
+          '<button class="btn" style="font-size:12px;padding:4px 10px;" onclick="openEquipmentModal()">➕ 添加</button></div>';
 
         for (var ki = 0; ki < items.length; ki++) {
           var eq = items[ki];
@@ -665,35 +691,140 @@
           var remaining = Math.max(0, (eq.purchase_price || 0) - revenue);
           var progress = (eq.purchase_price || 0) > 0 ? Math.min(100, Math.round(revenue / (eq.purchase_price || 0) * 100)) : 0;
           var breakEven = (eq.rental_price || 0) > 0 ? Math.ceil((eq.purchase_price || 0) / (eq.rental_price || 0)) : 0;
-          var backColor = progress >= 100 ? 'rgba(52,199,89,0.1)' : progress >= 50 ? 'rgba(255,149,0,0.1)' : 'rgba(0,113,227,0.05)';
           var barColor = progress >= 100 ? '#34c759' : progress >= 50 ? '#ff9500' : '#0071e3';
           var statusLabel = progress >= 100 ? '<span class="tag tag-success">已回本</span>' :
             '<span class="tag tag-warning">差 ' + fmt(remaining) + '</span>';
+          var eqIdAttr = "'" + eq.id + "'";
+          var orderAttr = "data-order='" + ki + "'";
+          var catAttr = "data-cat='" + catName + "'";
 
-          html += '<div style="background:' + backColor + ';border-radius:12px;padding:16px;margin-bottom:12px;">' +
-            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
-              '<div><div style="font-size:15px;font-weight:600;">' + eq.name + '</div>' +
-                '<div style="font-size:12px;color:#86868b;margin-top:2px;">购入 ' + fmt(eq.purchase_price) + ' &nbsp;|&nbsp; 出租 ' + fmt(eq.rental_price) + '/次</div></div>' +
-              '<div style="text-align:right;">' + statusLabel + '</div>' +
+          html += '<div class="eq-item" ' + orderAttr + ' ' + catAttr + ' draggable="true" data-id="' + eq.id + '" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:all 0.2s;" ' +
+            'ondragstart="eqDragStart(event)" ondragover="eqDragOver(event)" ondrop="eqDrop(event)" ondragend="eqDragEnd(event)">' +
+            '<div class="eq-card-inner">' +
+              '<div class="eq-drag-handle" title="拖拽排序">⋮⋮</div>' +
+              '<div class="eq-content">' +
+                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+                  '<input class="eq-inline-input eq-name-input" data-eqid="' + eq.id + '" value="' + (eq.name || '') + '" ' +
+                    'onblur="eqInlineSave(this.dataset.eqid, \'name\', this.value)" ' +
+                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
+                    'title="点击编辑名称" placeholder="器材名称">' +
+                '</div>' +
+                '<div style="display:flex;gap:16px;font-size:12px;color:#86868b;align-items:center;">' +
+                  '<span>购入 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.purchase_price || '') + '" ' +
+                    'onblur="eqInlineSave(this.dataset.eqid, \'purchase_price\', this.value)" ' +
+                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
+                    'title="点击编辑购入价格">元</span>' +
+                  '<span>出租 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
+                    'onblur="eqInlineSave(this.dataset.eqid, \'rental_price\', this.value)" ' +
+                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
+                    'title="点击编辑出租价格">元/次</span>' +
+                  '<span style="margin-left:auto;">' + statusLabel + '</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="eq-actions">' +
+                '<button class="eq-del-btn" onclick="eqDelete(\'' + eq.id + '\')" title="删除">✕</button>' +
+              '</div>' +
             '</div>' +
-            '<div style="background:rgba(0,0,0,0.08);border-radius:6px;height:8px;margin-bottom:10px;overflow:hidden;">' +
-              '<div style="background:' + barColor + ';height:100%;width:' + progress + '%;border-radius:6px;transition:width 0.3s;"></div>' +
+            '<div style="background:rgba(0,0,0,0.06);border-radius:4px;height:6px;margin-top:10px;overflow:hidden;">' +
+              '<div style="background:' + barColor + ';height:100%;width:' + progress + '%;border-radius:4px;transition:width 0.3s;"></div>' +
             '</div>' +
-            '<div style="display:flex;justify-content:space-between;font-size:12px;color:#86868b;">' +
-              '<span>已出租 <strong style="color:#1d1d1f;">' + times + '</strong> 次（收入 ' + fmt(revenue) + '）</span>' +
-              '<span>回本 ' + progress + '% &nbsp;|&nbsp; 还差 <strong style="color:#ff3b30;">' + (breakEven - times) + '</strong> 次</span>' +
+            '<div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-top:6px;">' +
+              '<span>已出租 <strong style="color:#1d1d1f;">' + times + '</strong> 次 · 收入 ' + fmt(revenue) + '</span>' +
+              '<span>回本 ' + progress + '% · 还差 <strong style="color:#ff3b30;">' + Math.max(0, breakEven - times) + '</strong> 次</span>' +
             '</div>' +
           '</div>';
         }
         html += '</div>';
       }
 
-      html += '<div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row">' +
-        '<button class="btn" onclick="openEquipmentModal()">➕ 添加器材</button>' +
-        '<span class="quick-link" onclick="showPage(\'projects\')">📋 查看项目 →</span>' +
-      '</div></div>';
+      html += '<div class="card" style="text-align:center;padding:24px;"><div style="color:#86868b;font-size:14px;margin-bottom:8px;">⚡ 快捷操作</div>' +
+        '<button class="btn" onclick="openEquipmentModal()">➕ 添加器材</button> ' +
+        '<button class="btn btn-secondary" onclick="showPage(\'projects\')">📋 查看项目</button>' +
+      '</div>';
 
       return html;
+    }
+
+    // === 器材内联编辑 ===
+    async function eqInlineSave(id, field, value) {
+      var data = {};
+      if (field === 'purchase_price' || field === 'rental_price') {
+        data[field] = parseFloat(value) || 0;
+      } else {
+        data[field] = value;
+      }
+      await dbUpdate('equipment', id, data);
+    }
+
+    async function eqDelete(id) {
+      if (!confirm('确定删除该器材？\n删除后，与项目的关联记录也会清除。')) return;
+      var rels = await dbGet('project_equipment');
+      for (var i = 0; i < rels.length; i++) {
+        if (rels[i].equipment_id === id) await dbDelete('project_equipment', rels[i].id);
+      }
+      await dbDelete('equipment', id);
+      showPage('equipment');
+    }
+
+    // === 器材拖拽排序 ===
+    var _eqDraggedId = null;
+    var _eqDraggedCat = null;
+
+    function eqDragStart(e) {
+      _eqDraggedId = e.currentTarget.dataset.id;
+      _eqDraggedCat = e.currentTarget.dataset.cat;
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function eqDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      var target = e.currentTarget;
+      if (target.dataset.id !== _eqDraggedId) {
+        target.classList.add('drag-over');
+      }
+    }
+
+    function eqDrop(e) {
+      e.preventDefault();
+      var target = e.currentTarget;
+      target.classList.remove('drag-over');
+      if (target.dataset.id === _eqDraggedId) return;
+
+      var cat = _eqDraggedCat;
+      // 获取同类别所有器材，重新计算顺序
+      (async function() {
+        var allEqs = await dbGet('equipment');
+        var catEqs = allEqs.filter(function(eq) { return eq.category === cat; });
+        catEqs.sort(function(a, b) { return (a.display_order || 999) - (b.display_order || 999); });
+
+        // 找到拖拽项和目标项的位置
+        var fromIdx = -1, toIdx = -1;
+        for (var i = 0; i < catEqs.length; i++) {
+          if (catEqs[i].id === _eqDraggedId) fromIdx = i;
+          if (catEqs[i].id === target.dataset.id) toIdx = i;
+        }
+        if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+
+        // 重新排列
+        var moved = catEqs.splice(fromIdx, 1)[0];
+        catEqs.splice(toIdx, 0, moved);
+
+        // 保存新顺序
+        for (var j = 0; j < catEqs.length; j++) {
+          await dbUpdate('equipment', catEqs[j].id, { display_order: j });
+        }
+        showPage('equipment');
+      })();
+    }
+
+    function eqDragEnd(e) {
+      _eqDraggedId = null;
+      _eqDraggedCat = null;
+      document.querySelectorAll('.eq-item').forEach(function(el) {
+        el.classList.remove('dragging', 'drag-over');
+      });
     }
 
     // 添加/编辑器材弹窗
@@ -724,6 +855,7 @@
         rental_price: parseFloat(document.getElementById('eqRentalPrice').value) || 0,
         created_at: new Date().toISOString()
       };
+      if (!editId) data.display_order = 999; // 新增默认排最后
       if (editId) await dbUpdate('equipment', editId, data);
       else await dbInsert('equipment', data);
       closeModal(); showPage('equipment');
@@ -935,7 +1067,7 @@
             'CREATE TABLE projects (id TEXT PRIMARY KEY, name TEXT, client TEXT, contract NUMERIC, cost NUMERIC, received NUMERIC, received_date DATE, status TEXT, created_at TIMESTAMP);\n' +
             'CREATE TABLE clients (id TEXT PRIMARY KEY, name TEXT, phone TEXT, email TEXT, created_at TIMESTAMP);\n' +
             'CREATE TABLE transactions (id TEXT PRIMARY KEY, type TEXT, category TEXT, amount NUMERIC, date DATE, created_at TIMESTAMP);\n' +
-            'CREATE TABLE equipment (id TEXT PRIMARY KEY, name TEXT, category TEXT, purchase_price NUMERIC, rental_price NUMERIC, created_at TIMESTAMP);\n' +
+            'CREATE TABLE equipment (id TEXT PRIMARY KEY, name TEXT, category TEXT, purchase_price NUMERIC, rental_price NUMERIC, display_order NUMERIC DEFAULT 999, created_at TIMESTAMP);\n' +
             'CREATE TABLE project_equipment (id TEXT PRIMARY KEY, project_id TEXT, equipment_id TEXT, created_at TIMESTAMP);' +
             '</pre></div>';
           return false;
@@ -1019,6 +1151,7 @@
           category: list[i].category,
           purchase_price: list[i].purchase_price,
           rental_price: list[i].rental_price,
+          display_order: i,
           created_at: new Date().toISOString()
         });
       }
