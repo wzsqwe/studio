@@ -660,11 +660,12 @@
       var eqs = await dbGet('equipment');
       var rels = await dbGet('project_equipment');
 
-      // 计算每件器材的使用统计
-      function getEqStats(eqId) {
+      // 计算每件器材的使用统计（优先 rental_count，其次 project_equipment 记录数）
+      function getEqStats(eq) {
+        if (eq.rental_count != null) return eq.rental_count;
         var times = 0;
         for (var j = 0; j < rels.length; j++) {
-          if (rels[j].equipment_id === eqId) times++;
+          if (rels[j].equipment_id === eq.id) times++;
         }
         return times;
       }
@@ -677,7 +678,7 @@
       var totalValue = 0, totalRented = 0, totalRevenue = 0;
       for (var ti = 0; ti < eqs.length; ti++) {
         totalValue += (eqs[ti].purchase_price || 0);
-        var t = getEqStats(eqs[ti].id);
+        var t = getEqStats(eqs[ti]);
         totalRented += t;
         totalRevenue += t * (eqs[ti].rental_price || 0);
       }
@@ -702,15 +703,15 @@
       // ===== 使用率排名 =====
       // 给每件器材算好统计数据
       for (var ri = 0; ri < eqs.length; ri++) {
-        eqs[ri]._times = getEqStats(eqs[ri].id);
+        eqs[ri]._times = getEqStats(eqs[ri]);
         eqs[ri]._revenue = eqs[ri]._times * (eqs[ri].rental_price || 0);
         eqs[ri]._progress = (eqs[ri].purchase_price || 0) > 0 ? Math.min(100, Math.round(eqs[ri]._revenue / (eqs[ri].purchase_price || 0) * 100)) : 0;
       }
       // 按使用次数降序
       var ranked = [].concat(eqs).sort(function(a, b) { return b._times - a._times; });
-      var top5 = ranked.slice(0, 5);
+      var top5 = ranked.slice(0, 10);
       var zeroUse = ranked.filter(function(eq) { return eq._times === 0; });
-      var bottom5 = ranked.filter(function(eq) { return eq._times > 0; }).slice(-5);
+      var bottom5 = ranked.filter(function(eq) { return eq._times > 0; }).slice(-10);
 
       var rankIcon = function(idx) {
         if (idx === 0) return '🥇';
@@ -779,7 +780,7 @@
 
         for (var ki = 0; ki < items.length; ki++) {
           var eq = items[ki];
-          var times = getEqStats(eq.id);
+          var times = getEqStats(eq);
           var revenue = times * (eq.rental_price || 0);
           var remaining = Math.max(0, (eq.purchase_price || 0) - revenue);
           var progress = (eq.purchase_price || 0) > 0 ? Math.min(100, Math.round(revenue / (eq.purchase_price || 0) * 100)) : 0;
@@ -802,15 +803,19 @@
                     'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
                     'title="点击编辑名称" placeholder="器材名称">' +
                 '</div>' +
-                '<div style="display:flex;gap:16px;font-size:12px;color:#86868b;align-items:center;">' +
+                '<div style="display:flex;gap:12px;font-size:12px;color:#86868b;align-items:center;flex-wrap:wrap;">' +
                   '<span>购入 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.purchase_price || '') + '" ' +
                     'onblur="eqInlineSave(this.dataset.eqid, \'purchase_price\', this.value)" ' +
                     'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
                     'title="点击编辑购入价格">元</span>' +
-                  '<span>出租 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
+                  '<span>出租价 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.rental_price || '') + '" ' +
                     'onblur="eqInlineSave(this.dataset.eqid, \'rental_price\', this.value)" ' +
                     'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
                     'title="点击编辑出租价格">元/次</span>' +
+                  '<span>出租 <input class="eq-inline-input eq-price-input" data-eqid="' + eq.id + '" value="' + (eq.rental_count != null ? eq.rental_count : times) + '" ' +
+                    'onblur="eqInlineSave(this.dataset.eqid, \'rental_count\', this.value)" ' +
+                    'onkeydown="if(event.key===\'Enter\')this.blur()" ' +
+                    'title="点击编辑出租次数">次</span>' +
                   '<span style="margin-left:auto;">' + statusLabel + '</span>' +
                 '</div>' +
               '</div>' +
@@ -822,7 +827,7 @@
               '<div style="background:' + barColor + ';height:100%;width:' + progress + '%;border-radius:4px;transition:width 0.3s;"></div>' +
             '</div>' +
             '<div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-top:6px;">' +
-              '<span>已出租 <strong style="color:#1d1d1f;">' + times + '</strong> 次 · 收入 ' + fmt(revenue) + '</span>' +
+              '<span>累计收入 ' + fmt(revenue) + '</span>' +
               '<span>回本 ' + progress + '% · 还差 <strong style="color:#ff3b30;">' + Math.max(0, breakEven - times) + '</strong> 次</span>' +
             '</div>' +
           '</div>';
@@ -843,6 +848,8 @@
       var data = {};
       if (field === 'purchase_price' || field === 'rental_price') {
         data[field] = parseFloat(value) || 0;
+      } else if (field === 'rental_count') {
+        data[field] = parseInt(value) || 0;
       } else {
         data[field] = value;
       }
@@ -931,7 +938,7 @@
 
     // 添加/编辑器材弹窗
     async function openEquipmentModal(editId) {
-      var eq = { name: '', category: '配件', purchase_price: '', rental_price: '' };
+      var eq = { name: '', category: '配件', purchase_price: '', rental_price: '', rental_count: 0 };
       if (editId) {
         var eqs = await dbGet('equipment');
         for (var i = 0; i < eqs.length; i++) { if (eqs[i].id === editId) { eq = eqs[i]; break; } }
@@ -946,7 +953,8 @@
         '<div class="form-group"><label class="form-label">器材名称</label><input class="form-input" id="eqName" value="' + (eq.name || '') + '" placeholder="输入器材名称"></div>' +
         '<div class="form-group"><label class="form-label">类别</label><select class="form-select" id="eqCategory">' + catHtml + '</select></div>' +
         '<div class="form-group"><label class="form-label">购入价格</label><input class="form-input" id="eqPurchasePrice" type="number" value="' + (eq.purchase_price || '') + '" placeholder="0"></div>' +
-        '<div class="form-group"><label class="form-label">单次出租价格</label><input class="form-input" id="eqRentalPrice" type="number" value="' + (eq.rental_price || '') + '" placeholder="0"></div>',
+        '<div class="form-group"><label class="form-label">单次出租价格</label><input class="form-input" id="eqRentalPrice" type="number" value="' + (eq.rental_price || '') + '" placeholder="0"></div>' +
+        '<div class="form-group"><label class="form-label">累计出租次数</label><input class="form-input" id="eqRentalCount" type="number" value="' + (eq.rental_count != null ? eq.rental_count : 0) + '" placeholder="0"></div>',
         delBtn + '<button class="btn btn-secondary" onclick="closeModal()">取消</button><button class="btn" onclick="saveEquipment(\'' + (editId || '') + '\')">保存</button>');
     }
 
@@ -959,6 +967,7 @@
         category: document.getElementById('eqCategory').value,
         purchase_price: parseFloat(document.getElementById('eqPurchasePrice').value) || 0,
         rental_price: parseFloat(document.getElementById('eqRentalPrice').value) || 0,
+        rental_count: parseInt(document.getElementById('eqRentalCount').value) || 0,
         created_at: new Date().toISOString()
       };
       if (!editId) data.display_order = 999; // 新增默认排最后
