@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bgGrad)"/>
+  <circle cx="256" cy="220" r="100" fill="none" stroke="url(#goldGrad)" stroke-width="16"/>
+  <circle cx="256" cy="220" r="70" fill="none" stroke="url(#goldGrad)" stroke-width="8"/>
+  <circle cx="256" cy="220" r="35" fill="url(#goldGrad)"/>
+  <path d="M 180 320 Q 200 360 256 380 Q 312 360 332 320 L 332 400 Q 312 420 256 420 Q 200 420 180 400 Z" fill="url(#goldGrad)"/>
+  <text x="256" y="460" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#94a3b8" text-anchor="middle">PRO</text>
+</svg>

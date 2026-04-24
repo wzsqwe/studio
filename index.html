@@ -659,10 +659,21 @@
     async function renderEquipment() {
       var eqs = await dbGet('equipment');
       var rels = await dbGet('project_equipment');
+      var usageLogs = await dbGet('equipment_usage_log');
 
-      // 计算每件器材的使用统计（优先 rental_count，其次 project_equipment 记录数）
+      // 计算每件器材的使用统计（日志表优先，其次 rental_count，最后 project_equipment 记录数）
       function getEqStats(eq) {
+        // 优先：从日志表统计
+        if (usageLogs && usageLogs.length > 0) {
+          var logCount = 0;
+          for (var li = 0; li < usageLogs.length; li++) {
+            if (usageLogs[li].equipment_id === eq.id) logCount++;
+          }
+          if (logCount > 0) return logCount;
+        }
+        // 其次：rental_count 字段
         if (eq.rental_count != null) return eq.rental_count;
+        // 最后：project_equipment 关联数
         var times = 0;
         for (var j = 0; j < rels.length; j++) {
           if (rels[j].equipment_id === eq.id) times++;
@@ -1073,7 +1084,7 @@
           await dbDelete('project_equipment', rels[j].id);
         }
       }
-      // 添加新选中的器材
+      // 添加新选中的器材，同时写入使用日志
       for (var k = 0; k < selectedIds.length; k++) {
         var exists = rels.some(function(r) { return r.project_id === data.id && r.equipment_id === selectedIds[k]; });
         if (!exists) {
@@ -1081,6 +1092,15 @@
             id: genId(),
             project_id: data.id,
             equipment_id: selectedIds[k],
+            created_at: new Date().toISOString()
+          });
+          // 写入使用日志（不可逆记录）
+          await dbInsert('equipment_usage_log', {
+            id: genId(),
+            equipment_id: selectedIds[k],
+            project_id: data.id,
+            usage_date: data.received_date || new Date().toISOString().split('T')[0],
+            notes: data.name || '',
             created_at: new Date().toISOString()
           });
         }
@@ -1183,7 +1203,8 @@
             'CREATE TABLE clients (id TEXT PRIMARY KEY, name TEXT, phone TEXT, email TEXT, created_at TIMESTAMP);\n' +
             'CREATE TABLE transactions (id TEXT PRIMARY KEY, type TEXT, category TEXT, amount NUMERIC, date DATE, created_at TIMESTAMP);\n' +
             'CREATE TABLE equipment (id TEXT PRIMARY KEY, name TEXT, category TEXT, purchase_price NUMERIC, rental_price NUMERIC, display_order NUMERIC DEFAULT 999, created_at TIMESTAMP);\n' +
-            'CREATE TABLE project_equipment (id TEXT PRIMARY KEY, project_id TEXT, equipment_id TEXT, created_at TIMESTAMP);' +
+            'CREATE TABLE project_equipment (id TEXT PRIMARY KEY, project_id TEXT, equipment_id TEXT, created_at TIMESTAMP);\n' +
+            'CREATE TABLE equipment_usage_log (id TEXT PRIMARY KEY, equipment_id TEXT, project_id TEXT, usage_date DATE, notes TEXT, created_at TIMESTAMP);' +
             '</pre></div>';
           return false;
         }

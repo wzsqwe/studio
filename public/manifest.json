@@ -1,0 +1,15 @@
+{
+  "short_name": "PhotoStudio Pro",
+  "name": "自由摄影师全流程经营管理系统",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a"
+}
