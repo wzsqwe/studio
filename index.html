@@ -256,6 +256,7 @@
     <nav class="topbar-nav">
       <button class="active" onclick="showPage('overview')">总览</button>
       <button onclick="showPage('projects')">项目</button>
+      <button onclick="showPage('equipment')">器材</button>
     </nav>
   </header>
 
@@ -360,7 +361,7 @@
     }
     
     function getProjectYear(project) {
-      // 优先使用收款日期
+      // 优先使用执行日期
       if (project.received_date) {
         return new Date(project.received_date).getFullYear();
       }
@@ -404,6 +405,7 @@
           // 缓存渲染结果
           localStorage.setItem('studio_overview_html', content);
         } else if (name === 'projects') content = await renderProjects();
+        else if (name === 'equipment') content = await renderEquipment();
         else if (name === 'clients') content = await renderClients();
         else if (name === 'transactions') content = await renderTransactions();
       } catch (e) {
@@ -605,6 +607,140 @@
       return '<h1 class="page-title">收支</h1><button class="btn" onclick="openTransModal()">💰 添加记录</button><div class="card" style="margin-top:20px;"><div class="table-wrap"><table><thead><tr><th>日期</th><th>类型</th><th>分类</th><th>金额</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
     }
 
+    // 渲染器材板块
+    async function renderEquipment() {
+      var eqs = await dbGet('equipment');
+      var rels = await dbGet('project_equipment');
+      var ps = await dbGet('projects');
+
+      // 按类别分组
+      var cats = { '摄影机': [], '镜头': [], '配件': [], '移动器材': [] };
+      for (var i = 0; i < eqs.length; i++) {
+        var cat = eqs[i].category || '其他';
+        if (!cats[cat]) cats[cat] = [];
+        cats[cat].push(eqs[i]);
+      }
+
+      // 计算每件器材的使用统计
+      function getEqStats(eqId) {
+        var times = 0;
+        for (var j = 0; j < rels.length; j++) {
+          if (rels[j].equipment_id === eqId) times++;
+        }
+        return times;
+      }
+
+      var catLabels = { '摄影机': '📷', '镜头': '🔭', '配件': '🎒', '移动器材': '🚗' };
+      var html = '<h1 class="page-title">器材</h1>';
+      html += '<div class="card" style="margin-bottom:20px;"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">';
+
+      // 器材总览统计
+      var totalValue = 0, totalRented = 0, totalRevenue = 0;
+      for (var ti = 0; ti < eqs.length; ti++) {
+        totalValue += (eqs[ti].purchase_price || 0);
+        var t = getEqStats(eqs[ti].id);
+        totalRented += t;
+        totalRevenue += t * (eqs[ti].rental_price || 0);
+      }
+      html += '<div class="income-chart" style="flex:1;min-width:280px;">' +
+        '<div class="income-card"><div class="income-label">器材总价值</div><div class="income-value" style="font-size:22px;">' + fmt(totalValue) + '</div><div class="income-sub">' + eqs.length + ' 件器材</div></div>' +
+        '<div class="income-card green"><div class="income-label">累计出租次数</div><div class="income-value" style="font-size:22px;">' + totalRented + '</div><div class="income-sub">累计总收入</div></div>' +
+        '<div class="income-card orange"><div class="income-label">累计租金收入</div><div class="income-value" style="font-size:22px;">' + fmt(totalRevenue) + '</div><div class="income-sub">回本率 ' + (totalValue > 0 ? Math.round(totalRevenue / totalValue * 100) : 0) + '%</div></div>' +
+        '</div>';
+      html += '</div>';
+
+      // 分类展示器材
+      var catOrder = ['摄影机', '镜头', '配件', '移动器材'];
+      for (var ci = 0; ci < catOrder.length; ci++) {
+        var catName = catOrder[ci];
+        var items = cats[catName];
+        if (!items || items.length === 0) continue;
+
+        html += '<div class="card"><div class="card-header"><div class="card-title">' + (catLabels[catName] || '📦') + ' ' + catName + '</div></div>';
+
+        for (var ki = 0; ki < items.length; ki++) {
+          var eq = items[ki];
+          var times = getEqStats(eq.id);
+          var revenue = times * (eq.rental_price || 0);
+          var remaining = Math.max(0, (eq.purchase_price || 0) - revenue);
+          var progress = (eq.purchase_price || 0) > 0 ? Math.min(100, Math.round(revenue / (eq.purchase_price || 0) * 100)) : 0;
+          var breakEven = (eq.rental_price || 0) > 0 ? Math.ceil((eq.purchase_price || 0) / (eq.rental_price || 0)) : 0;
+          var backColor = progress >= 100 ? 'rgba(52,199,89,0.1)' : progress >= 50 ? 'rgba(255,149,0,0.1)' : 'rgba(0,113,227,0.05)';
+          var barColor = progress >= 100 ? '#34c759' : progress >= 50 ? '#ff9500' : '#0071e3';
+          var statusLabel = progress >= 100 ? '<span class="tag tag-success">已回本</span>' :
+            '<span class="tag tag-warning">差 ' + fmt(remaining) + '</span>';
+
+          html += '<div style="background:' + backColor + ';border-radius:12px;padding:16px;margin-bottom:12px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
+              '<div><div style="font-size:15px;font-weight:600;">' + eq.name + '</div>' +
+                '<div style="font-size:12px;color:#86868b;margin-top:2px;">购入 ' + fmt(eq.purchase_price) + ' &nbsp;|&nbsp; 出租 ' + fmt(eq.rental_price) + '/次</div></div>' +
+              '<div style="text-align:right;">' + statusLabel + '</div>' +
+            '</div>' +
+            '<div style="background:rgba(0,0,0,0.08);border-radius:6px;height:8px;margin-bottom:10px;overflow:hidden;">' +
+              '<div style="background:' + barColor + ';height:100%;width:' + progress + '%;border-radius:6px;transition:width 0.3s;"></div>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:12px;color:#86868b;">' +
+              '<span>已出租 <strong style="color:#1d1d1f;">' + times + '</strong> 次（收入 ' + fmt(revenue) + '）</span>' +
+              '<span>回本 ' + progress + '% &nbsp;|&nbsp; 还差 <strong style="color:#ff3b30;">' + (breakEven - times) + '</strong> 次</span>' +
+            '</div>' +
+          '</div>';
+        }
+        html += '</div>';
+      }
+
+      html += '<div class="card"><div class="section-header"><div class="section-title">⚡ 快捷操作</div></div><div class="quick-actions-row">' +
+        '<button class="btn" onclick="openEquipmentModal()">➕ 添加器材</button>' +
+        '<span class="quick-link" onclick="showPage(\'projects\')">📋 查看项目 →</span>' +
+      '</div></div>';
+
+      return html;
+    }
+
+    // 添加/编辑器材弹窗
+    async function openEquipmentModal(editId) {
+      var eq = { name: '', category: '配件', purchase_price: '', rental_price: '' };
+      if (editId) {
+        var eqs = await dbGet('equipment');
+        for (var i = 0; i < eqs.length; i++) { if (eqs[i].id === editId) { eq = eqs[i]; break; } }
+      }
+      var catOpts = ['摄影机', '镜头', '配件', '移动器材'];
+      var catHtml = '';
+      for (var k = 0; k < catOpts.length; k++) catHtml += '<option' + (eq.category === catOpts[k] ? ' selected' : '') + '>' + catOpts[k] + '</option>';
+      openModal(editId ? '编辑器材' : '添加器材',
+        '<div class="form-group"><label class="form-label">器材名称</label><input class="form-input" id="eqName" value="' + (eq.name || '') + '" placeholder="输入器材名称"></div>' +
+        '<div class="form-group"><label class="form-label">类别</label><select class="form-select" id="eqCategory">' + catHtml + '</select></div>' +
+        '<div class="form-group"><label class="form-label">购入价格</label><input class="form-input" id="eqPurchasePrice" type="number" value="' + (eq.purchase_price || '') + '" placeholder="0"></div>' +
+        '<div class="form-group"><label class="form-label">单次出租价格</label><input class="form-input" id="eqRentalPrice" type="number" value="' + (eq.rental_price || '') + '" placeholder="0"></div>',
+        '<button class="btn btn-danger" onclick="delEquipment(\'' + (editId || '') + '\')" style="margin-right:auto;" ' + (editId ? '' : 'style="display:none;"') + '>删除</button>' +
+        '<button class="btn btn-secondary" onclick="closeModal()">取消</button><button class="btn" onclick="saveEquipment(\'' + (editId || '') + '\')">保存</button>');
+    }
+
+    async function saveEquipment(editId) {
+      var data = {
+        id: editId || genId(),
+        name: document.getElementById('eqName').value,
+        category: document.getElementById('eqCategory').value,
+        purchase_price: parseFloat(document.getElementById('eqPurchasePrice').value) || 0,
+        rental_price: parseFloat(document.getElementById('eqRentalPrice').value) || 0,
+        created_at: new Date().toISOString()
+      };
+      if (editId) await dbUpdate('equipment', editId, data);
+      else await dbInsert('equipment', data);
+      closeModal(); showPage('equipment');
+    }
+
+    async function delEquipment(id) {
+      if (confirm('确定删除该器材？')) {
+        // 删除关联记录
+        var rels = await dbGet('project_equipment');
+        for (var i = 0; i < rels.length; i++) {
+          if (rels[i].equipment_id === id) await dbDelete('project_equipment', rels[i].id);
+        }
+        await dbDelete('equipment', id);
+        closeModal(); showPage('equipment');
+      }
+    }
+
     // 弹窗
     function openModal(title, body, footer) {
       document.getElementById('modalTitle').textContent = title;
@@ -618,38 +754,91 @@
     // 项目操作
     async function openProjectModal(editId) {
       var p = { name: '', client: '', contract: '', cost: '', received: '', received_date: '', status: '待确认' };
+      var selectedEqIds = [];
       if (editId) {
         var ps = await dbGet('projects');
         for (var i = 0; i < ps.length; i++) { if (ps[i].id === editId) { p = ps[i]; break; } }
+        // 获取该项目已选的器材
+        var rels = await dbGet('project_equipment');
+        for (var j = 0; j < rels.length; j++) {
+          if (rels[j].project_id === editId) selectedEqIds.push(rels[j].equipment_id);
+        }
       }
+      var eqs = await dbGet('equipment');
+      var eqByCat = {};
+      for (var k = 0; k < eqs.length; k++) {
+        var cat = eqs[k].category || '其他';
+        if (!eqByCat[cat]) eqByCat[cat] = [];
+        eqByCat[cat].push(eqs[k]);
+      }
+      var eqCats = ['摄影机', '镜头', '配件', '移动器材'];
+      var eqHtml = '<div class="form-group"><label class="form-label">参与器材（可多选）</label>';
+      for (var ci = 0; ci < eqCats.length; ci++) {
+        var items = eqByCat[eqCats[ci]];
+        if (!items || items.length === 0) continue;
+        var checkboxes = items.map(function(eq) {
+          var checked = selectedEqIds.indexOf(eq.id) >= 0 ? 'checked' : '';
+          return '<label style="display:flex;align-items:center;gap:6px;padding:6px 0;cursor:pointer;font-size:14px;"><input type="checkbox" class="eq-check" value="' + eq.id + '" ' + checked + ' style="width:16px;height:16px;">' + eq.name + ' <span style="color:#86868b;font-size:12px;">(' + fmt(eq.rental_price) + '/次)</span></label>';
+        }).join('');
+        eqHtml += '<div style="background:#f5f5f7;border-radius:8px;padding:8px 12px;margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:#86868b;margin-bottom:4px;">' + eqCats[ci] + '</div>' + checkboxes + '</div>';
+      }
+      eqHtml += '</div>';
+
       var statusOpts = ['待确认', '待执行', '拍摄中', '交付中', '已完结', '已全额回款', '逾期未回款', '待回款'];
       var statusHtml = '';
-      for (var k = 0; k < statusOpts.length; k++) statusHtml += '<option' + (p.status === statusOpts[k] ? ' selected' : '') + '>' + statusOpts[k] + '</option>';
+      for (var sk = 0; sk < statusOpts.length; sk++) statusHtml += '<option' + (p.status === statusOpts[sk] ? ' selected' : '') + '>' + statusOpts[sk] + '</option>';
       openModal(editId ? '编辑项目' : '新建项目',
         '<div class="form-group"><label class="form-label">项目名称</label><input class="form-input" id="pName" value="' + (p.name || '') + '" placeholder="输入项目名称"></div>' +
         '<div class="form-group"><label class="form-label">备注</label><input class="form-input" id="pClient" value="' + (p.client || '') + '" placeholder="输入备注"></div>' +
         '<div class="form-group"><label class="form-label">项目报价</label><input class="form-input" id="pContract" type="number" value="' + (p.contract || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">项目成本</label><input class="form-input" id="pCost" type="number" value="' + (p.cost || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">已收款</label><input class="form-input" id="pReceived" type="number" value="' + (p.received || '') + '" placeholder="0"></div>' +
-        '<div class="form-group"><label class="form-label">收款日期</label><input class="form-input" id="pReceivedDate" type="date" value="' + (p.received_date || '') + '"></div>' +
-        '<div class="form-group"><label class="form-label">状态</label><select class="form-select" id="pStatus">' + statusHtml + '</select></div>',
+        '<div class="form-group"><label class="form-label">执行日期</label><input class="form-input" id="pReceivedDate" type="date" value="' + (p.received_date || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">状态</label><select class="form-select" id="pStatus">' + statusHtml + '</select></div>' +
+        (eqs.length > 0 ? eqHtml : ''),
         '<button class="btn btn-secondary" onclick="closeModal()">取消</button><button class="btn" onclick="saveProject(\'' + (editId || '') + '\')">保存</button>');
     }
 
     async function saveProject(editId) {
-      var data = { 
-        id: editId || genId(), 
-        name: document.getElementById('pName').value, 
-        client: document.getElementById('pClient').value, 
-        contract: parseFloat(document.getElementById('pContract').value) || 0, 
-        cost: parseFloat(document.getElementById('pCost').value) || 0, 
-        received: parseFloat(document.getElementById('pReceived').value) || 0, 
-        received_date: document.getElementById('pReceivedDate').value, 
+      var data = {
+        id: editId || genId(),
+        name: document.getElementById('pName').value,
+        client: document.getElementById('pClient').value,
+        contract: parseFloat(document.getElementById('pContract').value) || 0,
+        cost: parseFloat(document.getElementById('pCost').value) || 0,
+        received: parseFloat(document.getElementById('pReceived').value) || 0,
+        received_date: document.getElementById('pReceivedDate').value,
         status: document.getElementById('pStatus').value,
         created_at: new Date().toISOString()
       };
       if (editId) await dbUpdate('projects', editId, data);
       else await dbInsert('projects', data);
+
+      // 保存器材关联
+      var checkboxes = document.querySelectorAll('.eq-check:checked');
+      var selectedIds = [];
+      for (var i = 0; i < checkboxes.length; i++) selectedIds.push(checkboxes[i].value);
+
+      // 获取现有关联，删除不在选中列表的
+      var rels = await dbGet('project_equipment');
+      for (var j = 0; j < rels.length; j++) {
+        if (rels[j].project_id === data.id && selectedIds.indexOf(rels[j].equipment_id) < 0) {
+          await dbDelete('project_equipment', rels[j].id);
+        }
+      }
+      // 添加新选中的器材
+      for (var k = 0; k < selectedIds.length; k++) {
+        var exists = rels.some(function(r) { return r.project_id === data.id && r.equipment_id === selectedIds[k]; });
+        if (!exists) {
+          await dbInsert('project_equipment', {
+            id: genId(),
+            project_id: data.id,
+            equipment_id: selectedIds[k],
+            created_at: new Date().toISOString()
+          });
+        }
+      }
+
       closeModal(); showPage('projects');
     }
 
@@ -660,14 +849,13 @@
       } 
     }
     
-    // 清账：将报价全部设为已收款
+    // 清账：将报价全部设为已收款（不改变执行日期）
     async function settleProject(id) {
       var ps = await dbGet('projects');
       var p = ps.find(function(x) { return x.id === id; });
-      if (p && confirm('确定清账？\\n项目：' + p.name + '\\n报价：' + fmt(p.contract) + '\\n将全部标记为已收款')) {
+      if (p && confirm('确定清账？\\n项目：' + p.name + '\\n报价：' + fmt(p.contract) + '\\n将全部标记为已收款\\n（执行日期不会被修改）')) {
         await dbUpdate('projects', id, {
           received: p.contract,
-          received_date: new Date().toISOString().split('T')[0],
           status: '已全额回款'
         });
         showPage('projects');
@@ -743,10 +931,12 @@
         ]);
         if (error && error.code === '42P01') {
           // 表不存在，需要创建
-          document.getElementById('page').innerHTML = '<div class="card"><h2>首次使用需要创建数据库表</h2><p>请在 Supabase 控制台执行以下 SQL：</p><pre style="background:#f5f5f5;padding:16px;border-radius:8px;overflow:auto;font-size:12px;">' + 
+          document.getElementById('page').innerHTML = '<div class="card"><h2>首次使用需要创建数据库表</h2><p>请在 Supabase 控制台执行以下 SQL：</p><pre style="background:#f5f5f5;padding:16px;border-radius:8px;overflow:auto;font-size:12px;">' +
             'CREATE TABLE projects (id TEXT PRIMARY KEY, name TEXT, client TEXT, contract NUMERIC, cost NUMERIC, received NUMERIC, received_date DATE, status TEXT, created_at TIMESTAMP);\n' +
             'CREATE TABLE clients (id TEXT PRIMARY KEY, name TEXT, phone TEXT, email TEXT, created_at TIMESTAMP);\n' +
-            'CREATE TABLE transactions (id TEXT PRIMARY KEY, type TEXT, category TEXT, amount NUMERIC, date DATE, created_at TIMESTAMP);' +
+            'CREATE TABLE transactions (id TEXT PRIMARY KEY, type TEXT, category TEXT, amount NUMERIC, date DATE, created_at TIMESTAMP);\n' +
+            'CREATE TABLE equipment (id TEXT PRIMARY KEY, name TEXT, category TEXT, purchase_price NUMERIC, rental_price NUMERIC, created_at TIMESTAMP);\n' +
+            'CREATE TABLE project_equipment (id TEXT PRIMARY KEY, project_id TEXT, equipment_id TEXT, created_at TIMESTAMP);' +
             '</pre></div>';
           return false;
         }
@@ -778,7 +968,61 @@
         if (cachedProjects && JSON.stringify(ps) !== JSON.stringify(cachedProjects)) {
           page.innerHTML = html;
         }
+        // 自动导入器材清单（如数据库为空）
+        await seedEquipment();
       })();
+    }
+
+    // 初始化器材清单
+    async function seedEquipment() {
+      var eqs = await dbGet('equipment');
+      if (eqs.length > 0) return; // 已有器材，不重复导入
+      var list = [
+        // 摄影机
+        { name: '如影4D 6k X1', category: '摄影机', purchase_price: 36000, rental_price: 800 },
+        { name: 'BMD PYXIS 6k', category: '摄影机', purchase_price: 20000, rental_price: 400 },
+        { name: 'BMD BMPCC 6K PRO', category: '摄影机', purchase_price: 10000, rental_price: 300 },
+        // 镜头
+        { name: 'DZO Arles 25/35/50/75/100 T1.4', category: '镜头', purchase_price: 50000, rental_price: 600 },
+        { name: 'NISI 雅典娜 14/25/35/50/85 T1.9', category: '镜头', purchase_price: 20000, rental_price: 400 },
+        // 配件
+        { name: 'Nisi ND 600', category: '配件', purchase_price: 1150, rental_price: 80 },
+        { name: '4D箱子', category: '配件', purchase_price: 1150, rental_price: 50 },
+        { name: '4D配重块', category: '配件', purchase_price: 400, rental_price: 30 },
+        { name: 'E口+拓展板', category: '配件', purchase_price: 2000, rental_price: 80 },
+        { name: '1T Ssd', category: '配件', purchase_price: 3200, rental_price: 100 },
+        { name: '分体线', category: '配件', purchase_price: 4500, rental_price: 150 },
+        { name: '视澎M7机头监', category: '配件', purchase_price: 1000, rental_price: 100 },
+        { name: 'DJI 7寸控制屏', category: '配件', purchase_price: 5500, rental_price: 200 },
+        { name: 'DJI大师摇轮', category: '配件', purchase_price: 44000, rental_price: 800 },
+        { name: '致迅M7 Pro 无线小监', category: '配件', purchase_price: 7800, rental_price: 300 },
+        { name: 'DJI 三通无线跟焦', category: '配件', purchase_price: 3900, rental_price: 200 },
+        { name: '致迅Se pro无线图传 3发4收', category: '配件', purchase_price: 5000, rental_price: 300 },
+        { name: '原力M无线跟焦', category: '配件', purchase_price: 1800, rental_price: 150 },
+        { name: '原力N无线跟焦', category: '配件', purchase_price: 1800, rental_price: 150 },
+        { name: '猛犸三方通话1拖7', category: '配件', purchase_price: 8999, rental_price: 300 },
+        { name: '18寸便携导演监', category: '配件', purchase_price: 2000, rental_price: 150 },
+        { name: '43寸LG升降大监', category: '配件', purchase_price: 6000, rental_price: 400 },
+        { name: '阅流云监', category: '配件', purchase_price: 12000, rental_price: 500 },
+        { name: '百视悦OL16监视器', category: '配件', purchase_price: 3400, rental_price: 200 },
+        // 移动器材
+        { name: 'NSH 1.5m Slider', category: '移动器材', purchase_price: 6000, rental_price: 200 },
+        { name: '捷拍V20三脚架', category: '移动器材', purchase_price: 6000, rental_price: 150 },
+        { name: '捷拍V15三脚架', category: '移动器材', purchase_price: 2000, rental_price: 80 },
+        { name: '狼王鱼钩', category: '移动器材', purchase_price: 1500, rental_price: 50 },
+        { name: '平衡车', category: '移动器材', purchase_price: 1200, rental_price: 100 }
+      ];
+      for (var i = 0; i < list.length; i++) {
+        await dbInsert('equipment', {
+          id: genId(),
+          name: list[i].name,
+          category: list[i].category,
+          purchase_price: list[i].purchase_price,
+          rental_price: list[i].rental_price,
+          created_at: new Date().toISOString()
+        });
+      }
+      console.log('器材清单已导入，共 ' + list.length + ' 件');
     }
 
     // 页面加载完成后初始化
