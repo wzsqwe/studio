@@ -274,9 +274,9 @@
   <header class="topbar">
     <div class="topbar-brand">📷 摄影师管理</div>
     <nav class="topbar-nav">
-      <button class="active" onclick="showPage('overview')">总览</button>
-      <button onclick="showPage('projects')">项目</button>
-      <button onclick="showPage('equipment')">器材</button>
+      <button class="active" onclick="showPage('overview', this)">总览</button>
+      <button onclick="showPage('projects', this)">项目</button>
+      <button onclick="showPage('equipment', this)">器材</button>
     </nav>
   </header>
 
@@ -412,9 +412,26 @@
     }
 
     // 页面渲染
-    async function showPage(name) {
-      document.querySelectorAll('.topbar-nav button').forEach(b => b.classList.remove('active'));
-      if (event && event.target) event.target.classList.add('active');
+    async function showPage(name, btnEl) {
+      // 找到当前 nav 按钮并设置 active
+      var navBtns = document.querySelectorAll('.topbar-nav button');
+      navBtns.forEach(function(b) { b.classList.remove('active'); });
+      // 如果传入了按钮元素，用它；否则根据 name 匹配
+      if (btnEl && btnEl.classList) {
+        btnEl.classList.add('active');
+      } else {
+        navBtns.forEach(function(b) {
+          if (b.textContent.trim() === getPageName(name)) b.classList.add('active');
+        });
+      }
+      function getPageName(n) {
+        if (n === 'overview') return '总览';
+        if (n === 'projects') return '项目';
+        if (n === 'equipment') return '器材';
+        if (n === 'clients') return '客户';
+        if (n === 'transactions') return '收支';
+        return '';
+      }
       
       var content = '<div class="loading">加载中...</div>';
       document.getElementById('page').innerHTML = content;
@@ -837,19 +854,23 @@
       var catOpts = ['摄影机', '镜头', '配件', '移动器材'];
       var catHtml = '';
       for (var k = 0; k < catOpts.length; k++) catHtml += '<option' + (eq.category === catOpts[k] ? ' selected' : '') + '>' + catOpts[k] + '</option>';
+      var delBtn = editId
+        ? '<button class="btn btn-danger" onclick="delEquipment(\'' + editId + '\')" style="margin-right:auto;">删除</button>'
+        : '';
       openModal(editId ? '编辑器材' : '添加器材',
         '<div class="form-group"><label class="form-label">器材名称</label><input class="form-input" id="eqName" value="' + (eq.name || '') + '" placeholder="输入器材名称"></div>' +
         '<div class="form-group"><label class="form-label">类别</label><select class="form-select" id="eqCategory">' + catHtml + '</select></div>' +
         '<div class="form-group"><label class="form-label">购入价格</label><input class="form-input" id="eqPurchasePrice" type="number" value="' + (eq.purchase_price || '') + '" placeholder="0"></div>' +
         '<div class="form-group"><label class="form-label">单次出租价格</label><input class="form-input" id="eqRentalPrice" type="number" value="' + (eq.rental_price || '') + '" placeholder="0"></div>',
-        '<button class="btn btn-danger" onclick="delEquipment(\'' + (editId || '') + '\')" style="margin-right:auto;" ' + (editId ? '' : 'style="display:none;"') + '>删除</button>' +
-        '<button class="btn btn-secondary" onclick="closeModal()">取消</button><button class="btn" onclick="saveEquipment(\'' + (editId || '') + '\')">保存</button>');
+        delBtn + '<button class="btn btn-secondary" onclick="closeModal()">取消</button><button class="btn" onclick="saveEquipment(\'' + (editId || '') + '\')">保存</button>');
     }
 
     async function saveEquipment(editId) {
+      var nameVal = document.getElementById('eqName').value.trim();
+      if (!nameVal) { alert('请输入器材名称'); return; }
       var data = {
         id: editId || genId(),
-        name: document.getElementById('eqName').value,
+        name: nameVal,
         category: document.getElementById('eqCategory').value,
         purchase_price: parseFloat(document.getElementById('eqPurchasePrice').value) || 0,
         rental_price: parseFloat(document.getElementById('eqRentalPrice').value) || 0,
