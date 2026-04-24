@@ -337,8 +337,11 @@
 
     async function dbUpdate(table, id, record) {
       const { data, error } = await supabaseClient.from(table).update(record).eq('id', id).select();
-      if (error) { console.error(error); return null; }
-      return data[0];
+      if (error) {
+        console.error('dbUpdate error:', error);
+        return null;
+      }
+      return data && data[0];
     }
 
     async function dbDelete(table, id) {
@@ -696,6 +699,71 @@
         '</div>' +
       '</div></div>';
 
+      // ===== 使用率排名 =====
+      // 给每件器材算好统计数据
+      for (var ri = 0; ri < eqs.length; ri++) {
+        eqs[ri]._times = getEqStats(eqs[ri].id);
+        eqs[ri]._revenue = eqs[ri]._times * (eqs[ri].rental_price || 0);
+        eqs[ri]._progress = (eqs[ri].purchase_price || 0) > 0 ? Math.min(100, Math.round(eqs[ri]._revenue / (eqs[ri].purchase_price || 0) * 100)) : 0;
+      }
+      // 按使用次数降序
+      var ranked = [].concat(eqs).sort(function(a, b) { return b._times - a._times; });
+      var top5 = ranked.slice(0, 5);
+      var zeroUse = ranked.filter(function(eq) { return eq._times === 0; });
+      var bottom5 = ranked.filter(function(eq) { return eq._times > 0; }).slice(-5);
+
+      var rankIcon = function(idx) {
+        if (idx === 0) return '🥇';
+        if (idx === 1) return '🥈';
+        if (idx === 2) return '🥉';
+        return '<span style="font-size:12px;color:#86868b;font-weight:600;">' + (idx + 1) + '</span>';
+      };
+      var rankBarColor = function(times, max) {
+        if (max === 0) return '#e0e0e0';
+        var ratio = times / max;
+        if (ratio >= 0.8) return '#34c759';
+        if (ratio >= 0.4) return '#ff9500';
+        return '#0071e3';
+      };
+      var maxTimes = top5.length > 0 ? top5[0]._times : 0;
+
+      var rankRow = function(eq, idx, maxT, isBottom) {
+        var catIcon = catLabels[eq.category] || '📦';
+        var barColor = rankBarColor(eq._times, maxT);
+        var barWidth = maxT > 0 ? Math.max(5, Math.round((eq._times / maxT) * 100)) : 5;
+        var rowBg = isBottom && idx === (bottom5.length - 1) ? 'rgba(255,59,48,0.05)' : 'rgba(0,0,0,0.02)';
+        var rowBorder = isBottom && idx === (bottom5.length - 1) ? 'border:1px solid rgba(255,59,48,0.2);' : '';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:' + rowBg + ';border-radius:8px;margin-bottom:4px;' + rowBorder + '">' +
+          '<div style="width:28px;text-align:center;flex-shrink:0;">' + rankIcon(idx) + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+              '<span style="font-size:12px;">' + catIcon + '</span>' +
+              '<span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + eq.name + '</span>' +
+            '</div>' +
+            '<div style="background:rgba(0,0,0,0.06);border-radius:3px;height:5px;overflow:hidden;">' +
+              '<div style="background:' + barColor + ';height:100%;width:' + barWidth + '%;border-radius:3px;"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="text-align:right;flex-shrink:0;min-width:60px;">' +
+            '<div style="font-size:16px;font-weight:700;color:' + (eq._times > 0 ? '#0071e3' : '#86868b') + ';">' + eq._times + '</div>' +
+            '<div style="font-size:10px;color:#86868b;">次 · ' + fmt(eq._revenue) + '</div>' +
+          '</div>' +
+        '</div>';
+      };
+
+      var topHtml = top5.map(function(eq, i) { return rankRow(eq, i, maxTimes, false); }).join('');
+      var bottomHtml = bottom5.reverse().map(function(eq, i) {
+        return rankRow(eq, bottom5.length - 1 - i, maxTimes, true);
+      }).join('');
+
+      html += '<div class="card"><div class="card-header"><div class="card-title">📊 使用率排行</div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">' +
+          '<div><div style="font-size:13px;font-weight:600;color:#ff3b30;margin-bottom:10px;display:flex;align-items:center;gap:6px;">🔥 使用率最高</div>' + topHtml + '</div>' +
+          '<div><div style="font-size:13px;font-weight:600;color:#86868b;margin-bottom:10px;display:flex;align-items:center;gap:6px;">❄️ 近期未使用' +
+            (zeroUse.length > 0 ? ' <span style="background:rgba(255,59,48,0.1);color:#ff3b30;font-size:11px;padding:2px 6px;border-radius:10px;font-weight:600;">' + zeroUse.length + '件</span>' : '') +
+          '</div>' + bottomHtml + '</div>' +
+        '</div></div>';
+
       // 分类展示器材
       var catOrder = ['摄影机', '镜头', '配件', '移动器材'];
       for (var ci = 0; ci < catOrder.length; ci++) {
@@ -800,47 +868,56 @@
       _eqDraggedCat = e.currentTarget.dataset.cat;
       e.currentTarget.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', _eqDraggedId); // Firefox 兼容
     }
 
     function eqDragOver(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       var target = e.currentTarget;
-      if (target.dataset.id !== _eqDraggedId) {
+      if (target && target.dataset && target.dataset.id !== _eqDraggedId) {
         target.classList.add('drag-over');
       }
     }
 
     function eqDrop(e) {
       e.preventDefault();
+      e.stopPropagation();
       var target = e.currentTarget;
+      if (!target || !target.dataset) { console.error('drop target invalid'); return; }
       target.classList.remove('drag-over');
-      if (target.dataset.id === _eqDraggedId) return;
+      var targetId = target.dataset.id;
+      if (targetId === _eqDraggedId || !_eqDraggedId) return;
 
       var cat = _eqDraggedCat;
-      // 获取同类别所有器材，重新计算顺序
       (async function() {
-        var allEqs = await dbGet('equipment');
-        var catEqs = allEqs.filter(function(eq) { return eq.category === cat; });
-        catEqs.sort(function(a, b) { return (a.display_order || 999) - (b.display_order || 999); });
+        try {
+          var allEqs = await dbGet('equipment');
+          if (!allEqs || allEqs.length === 0) { console.error('equipment list empty'); return; }
+          var catEqs = allEqs.filter(function(eq) { return eq.category === cat; });
+          catEqs.sort(function(a, b) { return (a.display_order || 999) - (b.display_order || 999); });
 
-        // 找到拖拽项和目标项的位置
-        var fromIdx = -1, toIdx = -1;
-        for (var i = 0; i < catEqs.length; i++) {
-          if (catEqs[i].id === _eqDraggedId) fromIdx = i;
-          if (catEqs[i].id === target.dataset.id) toIdx = i;
+          var fromIdx = -1, toIdx = -1;
+          for (var i = 0; i < catEqs.length; i++) {
+            if (catEqs[i].id === _eqDraggedId) fromIdx = i;
+            if (catEqs[i].id === targetId) toIdx = i;
+          }
+          if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) {
+            console.warn('skip reorder: from=' + fromIdx + ' to=' + toIdx);
+            return;
+          }
+
+          var moved = catEqs.splice(fromIdx, 1)[0];
+          catEqs.splice(toIdx, 0, moved);
+
+          for (var j = 0; j < catEqs.length; j++) {
+            var r = await dbUpdate('equipment', catEqs[j].id, { display_order: j });
+            if (!r) console.error('update failed for', catEqs[j].id);
+          }
+          showPage('equipment');
+        } catch(err) {
+          console.error('drop error:', err);
         }
-        if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
-
-        // 重新排列
-        var moved = catEqs.splice(fromIdx, 1)[0];
-        catEqs.splice(toIdx, 0, moved);
-
-        // 保存新顺序
-        for (var j = 0; j < catEqs.length; j++) {
-          await dbUpdate('equipment', catEqs[j].id, { display_order: j });
-        }
-        showPage('equipment');
       })();
     }
 
